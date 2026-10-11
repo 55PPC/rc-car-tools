@@ -1,0 +1,12 @@
+# RC Car Tools · RC 遥控车研发计算工具
+
+在线使用：https://55ppc.github.io/rc-car-tools/
+
+| 文件 | 说明 |
+|---|---|
+| `index.html` | 网页版计算器，浏览器直接打开即可 |
+| `rc_calc.py` | Python 命令行版（仅标准库）：`python3 rc_calc.py`，示例 `python3 rc_calc.py --demo` |
+
+包含：齿比 / 总减速比 / Rollout、理论车速与反推马达齿、扭矩与推力加速度、齿轮几何（模数 / DP）、固定中心距齿数组合、Lewis 齿轮强度、轴强度、电池续航、轴荷与重心。
+
+> 所有结果均为理论值 / 初步估算，请与实测数据分开记录、对照修正；材料强度为参考值，以材料数据表为准。

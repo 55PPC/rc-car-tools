@@ -1,0 +1,1110 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>RC 遥控车研发计算工具</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky header + module tabs; each block = parameter column (left) + live results (right); one column on phones */
+:root{
+  --bg:#f2f4f7; --panel:#ffffff; --sunk:#e9edf2; --ink:#121720; --ink-2:#465063; --muted:#737d8d;
+  --line:#dce1e8; --line-2:#c3cbd6;
+  --accent:#2c56cf; --accent-ink:#ffffff; --accent-soft:#e4eafb;
+  --series:#2a78d6; --series-wash:rgba(42,120,214,.10);
+  --good:#0ca30c; --warn:#fab219; --bad:#d03b3b;
+  --good-ink:#006300; --warn-ink:#875800; --bad-ink:#b3292a;
+  --shadow:0 8px 24px rgba(18,23,32,.10);
+  --f-display:"Barlow Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --f-body:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1116; --panel:#161a21; --sunk:#1d222b; --ink:#edf0f5; --ink-2:#b3bbc8; --muted:#8a93a2;
+  --line:#29303b; --line-2:#3c4452;
+  --accent:#86a2ff; --accent-ink:#0b1020; --accent-soft:#1c2642;
+  --series:#3987e5; --series-wash:rgba(57,135,229,.16);
+  --good-ink:#33c533; --warn-ink:#fab219; --bad-ink:#f07575;
+  --shadow:0 8px 24px rgba(0,0,0,.45); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1116; --panel:#161a21; --sunk:#1d222b; --ink:#edf0f5; --ink-2:#b3bbc8; --muted:#8a93a2;
+  --line:#29303b; --line-2:#3c4452;
+  --accent:#86a2ff; --accent-ink:#0b1020; --accent-soft:#1c2642;
+  --series:#3987e5; --series-wash:rgba(57,135,229,.16);
+  --good-ink:#33c533; --warn-ink:#fab219; --bad-ink:#f07575;
+  --shadow:0 8px 24px rgba(0,0,0,.45); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+.tile .pill{margin-top:8px;white-space:normal}
+.mrow .meter{margin-top:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
+button{font:inherit;color:inherit}
+.wrap{max-width:1360px;margin-inline:auto;padding-inline:16px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* header */
+.top{background:var(--bg);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:14px 8px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{flex:none;color:var(--accent)}
+.brand h1{margin:0;font:700 24px/1.05 var(--f-display);letter-spacing:.01em;text-wrap:balance}
+.brand p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+.ghost{border:1px solid var(--line-2);background:var(--panel);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.ghost:hover{border-color:var(--accent);color:var(--accent)}
+/* shell: left vertical module nav + content; nav becomes a sticky strip on narrow screens */
+.shell{display:grid;grid-template-columns:184px minmax(0,1fr);gap:24px;align-items:start}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;flex-direction:column;gap:2px;padding-block:20px}
+.side button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;text-align:left;border:0;background:none;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--muted)}
+.side button .tl{font-size:14px;font-weight:600}
+.side button small{font-size:11px;font-weight:400;color:var(--muted)}
+.side button:hover{background:var(--sunk);color:var(--ink)}
+.side button[aria-selected="true"]{background:var(--panel);color:var(--ink);box-shadow:inset 3px 0 0 var(--accent),0 0 0 1px var(--line)}
+.side .sep{height:1px;background:var(--line);margin:8px 6px}
+@media (max-width:1023px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+  .side{top:env(safe-area-inset-top,0px);z-index:20;flex-direction:row;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding:6px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
+  .side::-webkit-scrollbar{display:none}
+  .side button{flex:none;width:auto;padding:8px 12px;border-radius:0;box-shadow:none}
+  .side button small,.side .sep{display:none}
+  .side button[aria-selected="true"]{background:none;box-shadow:inset 0 -2px 0 var(--accent)}
+}
+
+/* module blocks */
+main{padding-block:8px 56px;min-width:0;container:main / inline-size}
+.blk{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:20px;align-items:start;padding-block:18px}
+.blk + .blk{border-top:1px solid var(--line)}
+.blk > h2{grid-column:1/-1;margin:0;font:700 20px/1.1 var(--f-display);letter-spacing:.02em}
+.blk > h2 span{font:400 13px var(--f-body);color:var(--muted);margin-left:8px;letter-spacing:0}
+@container main (max-width:760px){.blk{grid-template-columns:minmax(0,1fr)}}
+.inputs{display:flex;flex-direction:column;gap:12px;min-width:0}
+.group{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px 6px}
+.group h3{margin:0 0 4px;font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--muted)}
+.field{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px 10px;padding-block:8px;border-top:1px solid var(--line)}
+.group h3 + .field{border-top:0}
+.field > label{color:var(--ink-2);min-width:0}
+.num{display:flex;align-items:center;gap:6px}
+.num input{width:92px;font:500 14px var(--f-mono);text-align:right;padding:5px 8px;border:1px solid var(--line-2);border-radius:6px;background:var(--panel);color:var(--ink)}
+.num input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.num .u{color:var(--muted);font-size:12px;min-width:2.8em}
+.field.bad .num input{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 8%,var(--panel))}
+.field input[type=range]{grid-column:1/-1;width:100%;margin:0;accent-color:var(--accent)}
+.chips{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line-2);background:transparent;color:var(--ink-2);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:500;cursor:pointer}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.pull{border-style:solid;background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.chip.pull b{font:600 12px var(--f-mono)}
+.hint{grid-column:1/-1;font-size:12px;color:var(--muted);margin-top:-2px}
+.vout{grid-column:1/-1;font-size:12px;color:var(--ink-2)}
+.vout b{font:600 13px var(--f-mono);color:var(--ink)}
+
+/* results */
+.results{display:flex;flex-direction:column;gap:14px;min-width:0}
+.tiles{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));gap:10px}
+.tiles[data-n="1"]{--cols:1}.tiles[data-n="2"]{--cols:2}.tiles[data-n="4"]{--cols:4}
+@container main (min-width:761px) and (max-width:1100px){.tiles[data-n="4"]{--cols:2}}
+@container main (max-width:560px){.tiles{--cols:2}.tiles[data-n="1"]{--cols:1}.tiles[data-n="3"] .tile:first-child{grid-column:1/-1}}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;min-width:0}
+.tile.key{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font:600 34px/1.05 var(--f-display);margin-top:4px;overflow-wrap:anywhere}
+.tile .v small{font:500 13px var(--f-body);color:var(--muted);margin-left:4px}
+.tile .s{font-size:12px;color:var(--ink-2);margin-top:4px}
+.tile .s b{font-family:var(--f-mono);font-weight:500}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;min-width:0}
+.card h4{margin:0;font-size:15px;font-weight:600}
+.card .sub{margin:2px 0 12px;color:var(--muted);font-size:12px}
+.card .sub code,.f{font-family:var(--f-mono);font-size:12px}
+.row-flex{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pill.good{color:var(--good-ink);background:color-mix(in srgb,var(--good) 14%,transparent)}
+.pill.warn{color:var(--warn-ink);background:color-mix(in srgb,var(--warn) 20%,transparent)}
+.pill.bad{color:var(--bad-ink);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+.big{font:600 22px var(--f-display)}
+.opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid var(--line-2);background:var(--panel);border-radius:8px;padding:8px 12px;cursor:pointer;text-align:left}
+.opt:hover{border-color:var(--accent)}
+.opt b{font:600 20px var(--f-display)}
+.opt span{font-size:12px;color:var(--muted)}
+.opt.on{border-color:var(--accent);background:var(--accent-soft)}
+.scroll{overflow-x:auto}
+table.data{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px}
+table.data th,table.data td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+table.data th:first-child,table.data td:first-child{text-align:left}
+table.data th{font-size:12px;font-weight:600;color:var(--muted)}
+table.data tr.on td{background:var(--accent-soft);font-weight:600}
+table.data td.l{text-align:left;color:var(--ink-2)}
+.mini{border:1px solid var(--line-2);background:transparent;border-radius:6px;padding:2px 8px;font-size:12px;color:var(--accent);cursor:pointer}
+.mini:hover{background:var(--accent-soft)}
+.note{font-size:12px;color:var(--muted);margin:10px 0 0}
+.warnline{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-top:10px}
+
+/* charts */
+.chart{position:relative;min-width:0}
+.chart + .chart{margin-top:6px}
+.chart svg{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y}
+.chart .ttl{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:2px}
+.tip{position:absolute;z-index:5;pointer-events:none;background:var(--panel);border:1px solid var(--line-2);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:var(--shadow);min-width:168px;line-height:1.55}
+.tip .h{font-weight:600;margin-bottom:2px}
+.tip .r{display:flex;justify-content:space-between;gap:14px;color:var(--muted)}
+.tip .r b{color:var(--ink);font:600 12px var(--f-mono)}
+.tip .key{display:inline-block;width:12px;height:2px;background:var(--series);vertical-align:middle;margin-right:6px}
+
+/* material bars */
+.mbars{display:flex;flex-direction:column}
+.mrow{display:grid;grid-template-columns:minmax(84px,128px) minmax(0,1fr) auto;align-items:center;gap:10px;padding-block:6px;border-top:1px solid var(--line)}
+.mrow:first-child{border-top:0}
+.mrow .n{font-size:13px;color:var(--ink-2);overflow-wrap:anywhere}
+.mrow .n small{display:block;color:var(--muted);font:400 11px var(--f-mono)}
+.track{position:relative;height:16px}
+.track .b{position:absolute;left:0;top:2px;height:12px;border-radius:0 4px 4px 0}
+.track .t{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1.5px solid var(--ink-2)}
+.mrow .val{display:flex;align-items:center;gap:6px;justify-content:flex-end;min-width:118px}
+.mrow .val b{font:600 13px var(--f-mono)}
+.b.good{background:var(--good)} .b.warn{background:var(--warn)} .b.bad{background:var(--bad)}
+.axis{display:grid;grid-template-columns:minmax(84px,128px) minmax(0,1fr) auto;gap:10px;font:400 11px var(--f-mono);color:var(--muted)}
+.axis .sc{position:relative;height:14px}
+.axis .sc span{position:absolute;transform:translateX(-50%)}
+.axis .pad{min-width:118px}
+
+.mrow > span{display:block}
+button.mrow{width:100%;font:inherit;color:inherit;text-align:left;background:none;border:0;border-top:1px solid var(--line);border-radius:6px;padding-inline:6px;cursor:pointer}
+button.mrow:first-child{border-top:0}
+button.mrow:hover{background:var(--sunk)}
+button.mrow[aria-pressed="true"]{background:var(--accent-soft)}
+.tag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:4px;font:600 11px/1.6 var(--f-body);color:var(--accent);background:var(--accent-soft);vertical-align:1px}
+button.mrow[aria-pressed="true"] .tag{background:var(--panel)}
+.field select{grid-column:1/-1;width:100%;font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line-2);border-radius:6px;background:var(--panel);color:var(--ink)}
+
+/* summary / BOM */
+.sumhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding-block:18px 12px}
+.sumhead h2{margin:0;font:700 20px/1.1 var(--f-display);letter-spacing:.02em}
+.sumhead p{margin:0;color:var(--muted);font-size:12px}
+#summary .card{margin-top:14px}
+table.bom th,table.bom td{text-align:left;vertical-align:top}
+table.bom td{white-space:normal}
+table.bom td.c{text-align:center;white-space:nowrap}
+table.bom td.part,table.bom .mini{white-space:nowrap}
+table.bom td.spec{min-width:240px;color:var(--ink-2)}
+table.bom td.mat{min-width:130px}
+table.bom td.ck{min-width:150px}
+table.bom td.ck .pill{white-space:normal}
+table.bom td.ck small{display:block;color:var(--muted);font:400 11px var(--f-mono);margin-top:2px}
+
+/* meter */
+.meter{position:relative;height:14px;border-radius:7px;background:var(--sunk);overflow:hidden;margin-top:8px}
+.meter i{position:absolute;inset:0 auto 0 0;border-radius:7px}
+
+/* diagrams */
+figure{margin:0}
+figure svg{display:block;width:100%;height:auto;color:var(--ink-2)}
+figcaption{font-size:12px;color:var(--muted);margin-top:6px}
+.diagrid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px}
+@container main (max-width:640px){.diagrid{grid-template-columns:minmax(0,1fr)}}
+.gearfig{background:var(--sunk);border-radius:8px;padding:8px;overflow:hidden}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13px;box-shadow:var(--shadow);z-index:50}
+footer{font-size:12px;color:var(--muted);padding-block:8px 32px;border-top:1px solid var(--line)}
+@media (max-width:520px){.brand h1{font-size:21px}.brand p{display:none}}
+@container main (max-width:520px){.tile .v{font-size:30px}.mrow,.axis{grid-template-columns:minmax(70px,96px) minmax(0,1fr) auto}.mrow .val,.axis .pad{min-width:104px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+<style>.between{justify-content:space-between}</style>
+<header class="top">
+  <div class="wrap bar">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="12" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="3 2.8"/><circle cx="17" cy="17" r="8.4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="17" r="2.6" fill="currentColor"/></svg>
+      <div><h1>RC 遥控车研发计算工具</h1><p>理论值 / 初步估算：不含打滑、轮胎变形、电压跌落，请与实测数据分开记录</p></div>
+    </div>
+    <button class="ghost" id="reset" type="button">恢复默认参数</button>
+  </div>
+</header>
+
+<div class="wrap shell">
+<nav class="side" role="tablist" aria-label="计算模块" aria-orientation="vertical">
+  <button role="tab" id="t-drive" data-tab="drive" aria-controls="drive" type="button"><span class="tl">动力 · 齿比</span><small>车速 · 推力 · 反推马达齿</small></button>
+  <button role="tab" id="t-gear" data-tab="gear" aria-controls="gear" type="button"><span class="tl">齿轮设计</span><small>几何 · 齿数组合 · 强度选材</small></button>
+  <button role="tab" id="t-shaft" data-tab="shaft" aria-controls="shaft" type="button"><span class="tl">轴强度</span><small>剪应力 · 轴径 · 选材</small></button>
+  <button role="tab" id="t-battery" data-tab="battery" aria-controls="battery" type="button"><span class="tl">电池 · 续航</span><small>电流余量 · 续航</small></button>
+  <button role="tab" id="t-chassis" data-tab="chassis" aria-controls="chassis" type="button"><span class="tl">车身 · 重心</span><small>轴荷 · 侧翻</small></button>
+  <span class="sep" aria-hidden="true"></span>
+  <button role="tab" id="t-summary" data-tab="summary" aria-controls="summary" type="button"><span class="tl">总结 · BOM</span><small>参数、选材与校核汇总</small></button>
+</nav>
+<main>
+<section id="drive" class="tab" role="tabpanel" aria-labelledby="t-drive">
+  <div class="blk">
+    <div class="inputs" data-block="drive"></div>
+    <div class="results">
+      <div class="tiles" id="drive-tiles"></div>
+      <div class="card" id="tgt-card"></div>
+      <div class="card">
+        <div class="row-flex between"><h4>换马达齿会怎样</h4><button class="mini" type="button" id="gt-toggle" aria-expanded="false">看表格</button></div>
+        <p class="sub" id="gt-sub"></p>
+        <div class="chart" id="ch-speed"></div>
+        <div class="chart" id="ch-thrust"></div>
+        <div class="scroll" id="gt-table" hidden></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="gear" class="tab" role="tabpanel" aria-labelledby="t-gear" hidden>
+  <div class="blk"><h2>齿轮几何 · 中心距<span>标准直齿，压力角 20°</span></h2>
+    <div class="inputs" data-block="geom"></div>
+    <div class="results">
+      <div class="tiles" id="geom-tiles"></div>
+      <div class="card">
+        <div class="row-flex between"><h4>啮合示意</h4><button class="mini" id="spin" type="button" aria-pressed="false">转动</button></div>
+        <p class="sub">按渐开线齿形和实际比例绘制，点划线为分度圆</p>
+        <figure class="gearfig" id="geom-fig"></figure>
+      </div>
+      <div class="card"><h4>尺寸表</h4><p class="sub">单位 mm · 齿顶高 = m，齿根高 = 1.25m</p><div class="scroll" id="geom-table"></div><div id="geom-warn"></div></div>
+    </div>
+  </div>
+  <div class="blk"><h2>固定中心距下的齿数组合<span>电机座孔位固定时，能换哪些马达齿 / 主齿</span></h2>
+    <div class="inputs" data-block="combo"></div>
+    <div class="results"><div class="card" id="combo-out"></div></div>
+  </div>
+  <div class="blk"><h2>齿轮弯曲强度<span>Lewis 公式初步校核</span></h2>
+    <div class="inputs" data-block="lewis"></div>
+    <div class="results">
+      <div class="tiles" id="lewis-tiles"></div>
+      <div class="card"><h4>各材料安全系数</h4><p class="sub">SF = 屈服强度（塑料取拉伸强度）÷ σ · 竖线为 SF 2</p><div id="lewis-bars"></div>
+        <p class="note">铜齿取半硬棒材的参考屈服强度：H62 约 250 MPa（1/2H 状态下限），铅黄铜 HPb59-1 / C3604 约 170 MPa（参照 C36000 半硬棒材的最低屈服值），牌号和状态不同差异很大。塑料齿轮还需考虑温升、蠕变、疲劳，SF 宜 ≥ 2–3。材料强度为常见参考值，以供应商数据表为准。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="shaft" class="tab" role="tabpanel" aria-labelledby="t-shaft" hidden>
+  <div class="blk"><h2>轴强度<span>传动轴 / 半轴 / 差速器轴</span></h2>
+    <div class="inputs" data-block="shaft"></div>
+    <div class="results">
+      <div class="tiles" id="shaft-tiles"></div>
+      <div class="card"><h4>各材料安全系数与最小轴径</h4><p class="sub" id="shaft-sub"></p><div id="shaft-bars"></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="battery" class="tab" role="tabpanel" aria-labelledby="t-battery" hidden>
+  <div class="blk"><h2>电池 · 功率 · 续航</h2>
+    <div class="inputs" data-block="batt"></div>
+    <div class="results"><div class="tiles" id="batt-tiles"></div><div class="card" id="batt-load"></div></div>
+  </div>
+</section>
+
+<section id="chassis" class="tab" role="tabpanel" aria-labelledby="t-chassis" hidden>
+  <div class="blk"><h2>车身：轴荷 · 重心 · 侧翻</h2>
+    <div class="inputs" data-block="chassis"></div>
+    <div class="results">
+      <div class="tiles" id="cs-tiles"></div>
+      <div class="card"><h4>重心位置</h4><p class="sub">侧视按轴距、轮径比例绘制；正视图中重心到轮胎接地点的连线就是侧翻临界线</p>
+        <div class="diagrid"><figure id="cs-side"></figure><figure id="cs-front"></figure></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="summary" class="tab" role="tabpanel" aria-labelledby="t-summary" hidden>
+  <div class="sumhead"><h2>方案总结</h2><p>数值实时取自前面各页，改任何参数这里都会跟着变</p></div>
+  <div class="tiles" id="sum-tiles"></div>
+  <div class="card">
+    <div class="row-flex between"><h4>BOM 表</h4><button class="mini" id="bom-copy" type="button">复制表格</button></div>
+    <p class="sub">材料在「齿轮设计」「轴强度」页选择。复制后可直接粘贴到 Excel / WPS 表格。</p>
+    <div class="scroll" id="bom"></div>
+  </div>
+</section>
+</main>
+</div>
+
+<footer class="wrap">
+  <p>由 rc_calc.py 移植。车速 = KV × 电压 × 带载系数 ÷ FDR × π × 轮径；扭矩常数 Kt = 60 / (2π·KV)；齿轮弯曲应力按 Lewis 公式 σ = K·Ft / (b·m·Y)；轴扭转剪应力 τ = 16T·D / π(D⁴ − d⁴)，许用剪应力取 0.5σs。参数会保存在当前浏览器里。</p>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script>
+"use strict";
+/* ========== 计算核心（移植自 rc_calc.py，公式保持一致） ========== */
+const G = 9.81, LIPO_N = 3.7, LIPO_F = 4.2, RAD = Math.PI / 180;
+const LEWIS_Y = [[12,.245],[13,.261],[14,.277],[15,.290],[16,.296],[17,.303],[18,.309],[19,.314],[20,.322],[21,.328],[22,.331],[24,.337],
+  [26,.346],[28,.353],[30,.359],[34,.371],[38,.384],[43,.397],[50,.409],[60,.422],[75,.435],[100,.447],[150,.460],[300,.472]];
+// 第三项 "铜齿"：只在齿轮强度里列出，轴强度不列
+const MATERIALS = [["PA66 尼龙",60],["PA66+30% 玻纤",150],["POM 赛钢",65],["铅黄铜 HPb59-1 / C3604",170,"铜齿"],["H62 黄铜（半硬）",250,"铜齿"],
+  ["6061-T6 铝",275],["7075-T6 铝",500],
+  ["45# 钢（调质）",355],["40Cr（调质）",785],["钛合金 TC4",830]];
+const C = {
+  fdr: (p, s, i = 1) => s / p * i,
+  motorRpm: (kv, v, lf = 1) => kv * v * lf,
+  kmh: (wrpm, d) => wrpm * Math.PI * d / 1000 * 60 / 1000,
+  topSpeed: (kv, v, fdr, d, lf = 1) => C.kmh(C.motorRpm(kv, v, lf) / fdr, d),
+  fdrFor: (t, kv, v, d, lf = 1) => C.motorRpm(kv, v, lf) / (t * 1000 / 60 / (Math.PI * d / 1000)),
+  rollout: (fdr, d) => Math.PI * d / fdr,
+  kt: kv => 60 / (2 * Math.PI * kv),
+  motorTorque: (kv, i, i0 = 0) => C.kt(kv) * Math.max(i - i0, 0),
+  wheelTorque: (tm, fdr, eff = 0.85) => tm * fdr * eff,
+  thrust: (tw, d) => tw / (d / 2000),
+  dp2m: dp => 25.4 / dp,
+  m2dp: m => 25.4 / m,
+  geom(m, z, pa = 20) { const d = m * z; return { d, da: d + 2 * m, df: d - 2.5 * m, db: d * Math.cos(pa * RAD), p: Math.PI * m, s: Math.PI * m / 2, h: 2.25 * m }; },
+  center: (m, z1, z2) => m * (z1 + z2) / 2,
+  zMin: (pa = 20) => 2 / Math.sin(pa * RAD) ** 2,
+  combos(m, a, p0, p1, s0, s1, tol) {
+    const total = 2 * a / m, out = [];
+    for (let p = p0; p <= p1; p++) {
+      const s = Math.round(total - p);
+      if (s < s0 || s > s1) continue;
+      const e = C.center(m, p, s) - a;
+      if (Math.abs(e) <= tol + 1e-9) out.push({ p, s, r: s / p, e }); // +1e-9：误差恰好等于容差时不被浮点误差漏掉
+    }
+    return out;
+  },
+  lewisY(z) {
+    if (z <= 12) return .245;
+    if (z >= 300) return .472;
+    for (let i = 0; i < LEWIS_Y.length - 1; i++) {
+      const [z0, y0] = LEWIS_Y[i], [z1, y1] = LEWIS_Y[i + 1];
+      if (z >= z0 && z <= z1) return y0 + (y1 - y0) * (z - z0) / (z1 - z0);
+    }
+  },
+  ft: (T, m, z) => 2 * T / (m * z / 1000),
+  lewis: (T, m, z, b, k = 1.5) => k * C.ft(T, m, z) / (b * m * C.lewisY(z)),
+  tau: (T, D, d = 0) => 16 * T * 1000 * D / (Math.PI * (D ** 4 - d ** 4)),
+  dMin: (T, ys, sf = 2) => Math.cbrt(16 * T * 1000 / (Math.PI * (0.5 * ys / sf))),
+  twist: (T, L, D, d, Gm) => T * 1000 * L / (Gm * Math.PI * (D ** 4 - d ** 4) / 32) / RAD, // 空心轴用空心截面极惯性矩
+  runtime: (cap, i, u = 0.8) => cap / 1000 * u / i * 60,
+  maxCur: (cap, c) => cap / 1000 * c,
+  cg: (f, r, wb) => r * wb / (f + r),
+  rollG: (tw, h) => tw / (2 * h),
+};
+
+/* ========== 参数与状态 ========== */
+const DEF = { kv: 3300, cells: 2, vmode: "n", volt: 7.4, lf: 0.85, pinion: 18, spur: 72, internal: 2.6, tire: 108,
+  cur: 60, i0: 2, eff: 0.85, mass: 2, mu: 0.8, accTo: 30, target: 60,
+  gunit: "m", gm: 1, gdp: 48, z1: 13, z2: 37, cm: 0.6, ca: 26, pmin: 12, pmax: 30, smin: 50, smax: 100, tol: 0.1,
+  lt: 0.5, lm: 1, lz: 13, lb: 6, lk: 2, st: 1, swheels: 4, simpact: 2, sd: 5, si: 0, ssf: 2, sl: 100,
+  cap: 5000, crate: 50, avg: 20, cf: 1, cr: 1.1, wb: 260, tw: 190, ch: 40,
+  lobj: "pin", mpin: "铅黄铜 HPb59-1 / C3604", mspur: "POM 赛钢", mshaft: "45# 钢（调质）" };
+const KEY = "rc-calc-v1";
+let S = Object.assign({}, DEF), D = {};
+try {
+  const saved = JSON.parse(localStorage.getItem(KEY) || "null");
+  if (saved && typeof saved === "object") for (const k in DEF) if (typeof saved[k] === typeof DEF[k] && (typeof saved[k] !== "number" || Number.isFinite(saved[k]))) S[k] = saved[k];
+} catch (e) {}
+const MAT = Object.fromEntries(MATERIALS.map(([n, ys]) => [n, ys]));
+for (const k of ["mpin", "mspur"]) if (!(S[k] in MAT)) S[k] = DEF[k];
+if (!MATERIALS.some(m => m[0] === S.mshaft && !m[2])) S.mshaft = DEF.mshaft;
+if (!["pin", "spur", "custom"].includes(S.lobj)) S.lobj = DEF.lobj;
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+const volts = () => S.vmode === "v" ? S.volt : S.cells * (S.vmode === "f" ? LIPO_F : LIPO_N);
+
+const VOLT = { type: "volt" };
+const BLOCKS = {
+  drive: [
+    { t: "电机与电池", f: [
+      { k: "kv", l: "电机 KV", u: "KV", min: 500, max: 12000, step: 50, sl: 1 },
+      VOLT,
+      { k: "lf", l: "带载转速系数", u: "×", min: 0.5, max: 1, step: 0.01, sl: 1, h: "空载 = 1，带载一般取 0.8–0.9" }] },
+    { t: "齿轮与轮胎", f: [
+      { k: "pinion", l: "马达齿 pinion", u: "T", min: 6, max: 60, step: 1, sl: 1, int: 1 },
+      { k: "spur", l: "主齿 spur", u: "T", min: 30, max: 150, step: 1, sl: 1, int: 1 },
+      { k: "internal", l: "内部减速比", u: ": 1", step: 0.001, h: "差速器 / 变速箱，没有就选「无」", pre: [[1, "无"], [2.6, "2.6"], [2.846, "37:13"]] },
+      { k: "tire", l: "轮胎直径", u: "mm", min: 20, max: 200, step: 1, sl: 1 }] },
+    { t: "推力与加速", f: [
+      { k: "cur", l: "电流（峰值或工作）", u: "A", step: 1, zero: 1 },
+      { k: "i0", l: "空载电流", u: "A", step: 0.1, zero: 1 },
+      { k: "eff", l: "传动效率", u: "×", min: 0.3, max: 1, step: 0.01, sl: 1 },
+      { k: "mass", l: "整车质量", u: "kg", step: 0.05 },
+      { k: "mu", l: "轮胎摩擦系数 μ", u: "", step: 0.05, pre: [[1, "地毯 1.0"], [0.8, "柏油 0.8"], [0.6, "土 0.6"]] },
+      { k: "accTo", l: "估算 0 → ? 加速时间", u: "km/h", step: 1 }] },
+    { t: "目标车速", f: [
+      { k: "target", l: "目标车速", u: "km/h", min: 10, max: 160, step: 1, sl: 1 }] },
+  ],
+  geom: [{ t: "齿轮参数", f: [
+    { type: "seg", k: "gunit", l: "尺寸单位", opts: [["m", "模数 m"], ["dp", "径节 DP"]] },
+    { k: "gm", l: "模数 m", u: "mm", step: 0.05, show: s => s.gunit === "m", pre: [[0.5, "0.5"], [0.6, "0.6"], [0.8, "0.8"], [1, "1.0"]] },
+    { k: "gdp", l: "径节 DP", u: "P", step: 1, show: s => s.gunit === "dp", pre: [[32, "32P"], [48, "48P"], [64, "64P"]] },
+    { k: "z1", l: "齿轮 1 齿数", u: "T", min: 6, max: 120, step: 1, sl: 1, int: 1 },
+    { k: "z2", l: "齿轮 2 齿数", u: "T", min: 0, max: 150, step: 1, sl: 1, int: 1, zero: 1, h: "填 0 只算单个齿轮" }] }],
+  combo: [{ t: "约束条件", f: [
+    { k: "cm", l: "模数 m", u: "mm", step: 0.001, pre: [[0.529, "48P≈0.529"], [0.397, "64P≈0.397"], [0.6, "0.6"], [0.8, "0.8"]] },
+    { k: "ca", l: "电机轴到主齿轴中心距", u: "mm", step: 0.1 },
+    { k: "pmin", l: "马达齿 最少", u: "T", step: 1, int: 1 },
+    { k: "pmax", l: "马达齿 最多", u: "T", step: 1, int: 1 },
+    { k: "smin", l: "主齿 最少", u: "T", step: 1, int: 1 },
+    { k: "smax", l: "主齿 最多", u: "T", step: 1, int: 1 },
+    { k: "tol", l: "允许中心距误差", u: "mm", step: 0.01, zero: 1 }] }],
+  lewis: [
+    { t: "校核对象与选材", f: [
+      { type: "seg", k: "lobj", l: "校核哪个齿轮", opts: [["pin", "马达齿"], ["spur", "主齿"], ["custom", "自定义"]], h: "选马达齿 / 主齿时，扭矩和齿数自动取自「动力」页；点右侧材料行可直接选用" },
+      { type: "sel", k: "mpin", l: "马达齿材料", gear: 1 },
+      { type: "sel", k: "mspur", l: "主齿材料", gear: 1 }] },
+    { t: "齿轮受力", f: [
+    { k: "lt", l: "该齿轮承受扭矩", u: "N·m", step: 0.01, zero: 1, show: s => s.lobj === "custom", pull: [["马达齿", "pinionT"], ["主齿", "spurT"]], h: "可从「动力」页带入：马达齿 = 电机扭矩，主齿 = 电机扭矩 × 一级齿比" },
+    { k: "lm", l: "模数 m", u: "mm", step: 0.05, pre: [[0.529, "48P"], [0.6, "0.6"], [0.8, "0.8"], [1, "1.0"]] },
+    { k: "lz", l: "齿数", u: "T", step: 1, int: 1, show: s => s.lobj === "custom" },
+    { k: "lb", l: "齿宽", u: "mm", step: 0.5 },
+    { k: "lk", l: "动载 / 冲击系数", u: "×", min: 1, max: 4, step: 0.1, sl: 1, h: "RC 落地、急加速冲击大，建议 1.5–3" }] }],
+  shaft: [
+    { t: "扭矩", f: [
+      { k: "st", l: "轴承受扭矩", u: "N·m", step: 0.05, zero: 1, pull: [["单根半轴扭矩", "axleT"]] },
+      { k: "swheels", l: "驱动轮数", u: "个", step: 1, int: 1, pre: [[2, "两驱 2"], [4, "四驱 4"]] },
+      { k: "simpact", l: "冲击系数", u: "×", step: 0.1, h: "带入值 = 轮总扭矩 ÷ 驱动轮数 × 冲击系数" }] },
+    { t: "尺寸与材料", f: [
+      { k: "sd", l: "轴外径", u: "mm", step: 0.1 },
+      { k: "si", l: "内径（实心填 0）", u: "mm", step: 0.1, zero: 1 },
+      { type: "sel", k: "mshaft", l: "轴材料", h: "点右侧材料行也可以选用" },
+      { k: "ssf", l: "目标安全系数", u: "×", step: 0.1, pre: [[1.5, "1.5"], [2, "2"], [3, "3"]] },
+      { k: "sl", l: "轴长（算扭转角）", u: "mm", step: 1, zero: 1 }] }],
+  batt: [{ t: "电池", f: [
+    { k: "cap", l: "容量", u: "mAh", step: 100, pre: [[3000, "3000"], [5000, "5000"], [8000, "8000"]] },
+    { k: "crate", l: "放电倍率", u: "C", step: 5 },
+    VOLT,
+    { k: "avg", l: "平均电流", u: "A", step: 1 }] }],
+  chassis: [{ t: "称重与尺寸", f: [
+    { k: "cf", l: "前轴称重", u: "kg", step: 0.01 },
+    { k: "cr", l: "后轴称重", u: "kg", step: 0.01 },
+    { k: "wb", l: "轴距", u: "mm", step: 1 },
+    { k: "tw", l: "轮距", u: "mm", step: 1 },
+    { k: "ch", l: "重心高度", u: "mm", min: 10, max: 150, step: 1, sl: 1 }] }],
+};
+
+/* ========== 控件生成 ========== */
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const SHOW = [], INTK = new Set(), ZEROK = new Set();
+const NF = {};
+const fmt = (x, d = 2) => (x == null || !Number.isFinite(x)) ? "—" : (NF[d] ||= new Intl.NumberFormat("zh-CN", { minimumFractionDigits: d, maximumFractionDigits: d })).format(x);
+const fmtIn = v => String(+(+v).toFixed(4));
+const chip = (k, v, t) => { const b = el("button", "chip", t); b.type = "button"; b.dataset.k = k; b.dataset.v = v; return b; };
+
+function fieldCtl(f, blk) {
+  const w = el("div", "field"), id = `${blk}-${f.k}`;
+  if (f.show) SHOW.push([w, f.show]);
+  if (f.int) INTK.add(f.k);
+  if (f.zero) ZEROK.add(f.k);
+  const lab = el("label", null, f.l); lab.htmlFor = id;
+  const num = el("div", "num"), inp = el("input");
+  Object.assign(inp, { type: "number", id, inputMode: f.int ? "numeric" : "decimal", step: f.step ?? "any", min: f.zero ? 0 : (f.int ? 1 : 0) });
+  inp.dataset.k = f.k;
+  num.append(inp, el("span", "u", f.u || ""));
+  w.append(lab, num);
+  if (f.sl) {
+    const r = el("input");
+    Object.assign(r, { type: "range", id: id + "-r", min: f.min, max: f.max, step: f.step });
+    r.dataset.k = f.k; r.setAttribute("aria-label", f.l); w.append(r);
+  }
+  if (f.pre) { const c = el("div", "chips"); for (const [v, t] of f.pre) c.append(chip(f.k, v, t)); w.append(c); }
+  if (f.pull) {
+    const c = el("div", "chips");
+    for (const [t, src] of f.pull) { const b = el("button", "chip pull"); b.type = "button"; b.dataset.k = f.k; b.dataset.src = src; b.dataset.t = t; c.append(b); }
+    w.append(c);
+  }
+  if (f.h) w.append(el("div", "hint", f.h));
+  return w;
+}
+function segCtl(f) {
+  const w = el("div", "field"); w.append(el("span", null, f.l), el("span"));
+  const c = el("div", "chips"); c.setAttribute("role", "group"); c.setAttribute("aria-label", f.l);
+  for (const [v, t] of f.opts) c.append(chip(f.k, v, t));
+  w.append(c);
+  if (f.h) w.append(el("div", "hint", f.h));
+  return w;
+}
+function selCtl(f, blk) {
+  const w = el("div", "field"), id = `${blk}-${f.k}`;
+  const lab = el("label", null, f.l); lab.htmlFor = id;
+  const s = el("select"); s.id = id; s.dataset.k = f.k;
+  for (const [n, ys, tag] of MATERIALS) {
+    if (tag && !f.gear) continue;
+    const o = el("option", null, `${n}（${ys} MPa）`); o.value = n; s.append(o);
+  }
+  w.append(lab, el("span"), s);
+  if (f.h) w.append(el("div", "hint", f.h));
+  return w;
+}
+function voltCtl(blk) {
+  const w = el("div", "field"); w.append(el("span", null, "电池电压"), el("span"));
+  const cells = el("div", "chips"); cells.setAttribute("role", "group"); cells.setAttribute("aria-label", "锂电节数");
+  for (let n = 1; n <= 6; n++) cells.append(chip("cells", n, n + "S"));
+  SHOW.push([cells, s => s.vmode !== "v"]);
+  const mode = el("div", "chips");
+  for (const [v, t] of [["n", "标称 3.7V/节"], ["f", "满电 4.2V/节"], ["v", "直接输入"]]) mode.append(chip("vmode", v, t));
+  const out = el("div", "vout"); out.dataset.vout = "1";
+  w.append(cells, mode, out);
+  const custom = fieldCtl({ k: "volt", l: "电压", u: "V", step: 0.1, show: s => s.vmode === "v" }, blk);
+  return [w, custom];
+}
+function build() {
+  for (const host of document.querySelectorAll("[data-block]")) {
+    const blk = host.dataset.block;
+    for (const g of BLOCKS[blk]) {
+      const sec = el("div", "group"); sec.append(el("h3", null, g.t));
+      for (const f of g.f) {
+        if (f.type === "volt") sec.append(...voltCtl(blk));
+        else if (f.type === "seg") sec.append(segCtl(f));
+        else if (f.type === "sel") sec.append(selCtl(f, blk));
+        else sec.append(fieldCtl(f, blk));
+      }
+      host.append(sec);
+    }
+  }
+}
+
+/* ========== 同步控件显示 ========== */
+function sync() {
+  const act = document.activeElement;
+  for (const inp of document.querySelectorAll("input[data-k]")) {
+    const v = S[inp.dataset.k];
+    if (inp.type === "range") { inp.value = v; continue; }
+    if (inp === act || inp.closest(".field").classList.contains("bad")) continue;
+    inp.value = fmtIn(v);
+  }
+  for (const s of document.querySelectorAll("select[data-k]")) if (s !== act) s.value = S[s.dataset.k];
+  for (const b of document.querySelectorAll("button.chip[data-v]")) {
+    const cur = S[b.dataset.k];
+    const on = typeof cur === "number" ? Math.abs(cur - +b.dataset.v) < 1e-9 : cur === b.dataset.v;
+    b.setAttribute("aria-pressed", on);
+  }
+  for (const b of document.querySelectorAll("button.chip.pull")) {
+    const v = D[b.dataset.src];
+    b.replaceChildren(document.createTextNode(`带入${b.dataset.t} `), el("b", null, fmt(v, 3)));
+    b.disabled = !Number.isFinite(v);
+  }
+  for (const [node, fn] of SHOW) node.hidden = !fn(S);
+  for (const o of document.querySelectorAll("[data-vout]"))
+    o.replaceChildren(document.createTextNode(S.vmode === "v" ? "直接输入电压 " : `${S.cells}S × ${S.vmode === "f" ? "4.2" : "3.7"} V = `), el("b", null, fmt(volts(), 2) + " V"));
+}
+
+/* ========== 派生量（多个页面共用） ========== */
+const $ = s => document.querySelector(s);
+function derive() {
+  const v = volts(), fdr = C.fdr(S.pinion, S.spur, S.internal);
+  const tm = C.motorTorque(S.kv, S.cur, S.i0), tw = C.wheelTorque(tm, fdr, S.eff), F = C.thrust(tw, S.tire);
+  const aRaw = F / S.mass, aLim = S.mu * G, a = Math.min(aRaw, aLim);
+  const needFdr = C.fdrFor(S.target, S.kv, v, S.tire, S.lf);
+  return { v, fdr, roll: C.rollout(fdr, S.tire), rpm0: C.motorRpm(S.kv, v),
+    vmax0: C.topSpeed(S.kv, v, fdr, S.tire), vmax: C.topSpeed(S.kv, v, fdr, S.tire, S.lf),
+    tm, tw, F, aRaw, aLim, a, tAcc: S.accTo / 3.6 / a, gripF: S.mu * S.mass * G,
+    needFdr, needP: S.spur * S.internal / needFdr,
+    pinionT: tm, spurT: tm * S.spur / S.pinion, axleT: tw / S.swheels * S.simpact };
+}
+
+/* ========== 通用小部件 ========== */
+const ICON = { good: "✓", warn: "△", bad: "✗" };
+const pill = (kind, text) => el("span", "pill " + kind, `${ICON[kind]} ${text}`);
+function tiles(host, list) {
+  host.dataset.n = list.length;
+  host.replaceChildren(...list.map(t => {
+    const d = el("div", "tile" + (t.key ? " key" : ""));
+    d.append(el("div", "k", t.k));
+    const v = el("div", "v", t.v); if (t.u) v.append(el("small", null, t.u)); d.append(v);
+    if (t.s) d.append(el("div", "s", t.s));
+    if (t.pill) d.append(t.pill);
+    return d;
+  }));
+}
+function nice(min, max, n = 4) {
+  if (!(max > min)) { const d = Math.abs(min) * 0.1 || 1; min -= d; max += d; }
+  const raw = (max - min) / n, mag = 10 ** Math.floor(Math.log10(raw)), r = raw / mag;
+  const st = (r <= 1 ? 1 : r <= 2 ? 2 : r <= 2.5 ? 2.5 : r <= 5 ? 5 : 10) * mag;
+  const lo = Math.floor(min / st) * st, hi = Math.ceil(max / st) * st, ticks = [];
+  for (let t = lo; t <= hi + st / 2; t += st) ticks.push(+t.toFixed(10));
+  return [lo, hi, ticks];
+}
+const fmtTick = t => Math.abs(t) >= 1000 ? fmt(t, 0) : String(+t.toFixed(3));
+
+/* 折线图：o = {title, xs, ys, fmtY, cur, ref:{y,label}, hollow(i), head(i), tip(i), onPick(x)} */
+function lineChart(host, o) {
+  const W = host.clientWidth; if (!W) return;
+  const H = 172, m = { l: 44, r: 14, t: 22, b: 26 }, iw = W - m.l - m.r, ih = H - m.t - m.b, n = o.xs.length;
+  const refOk = o.ref && Number.isFinite(o.ref.y);
+  const vals = o.ys.filter(Number.isFinite).concat(refOk ? [o.ref.y] : []);
+  if (!vals.length) { host.replaceChildren(el("div", "ttl", o.title), el("p", "note", "参数无效，无法绘图")); return; }
+  const [y0, y1, ticks] = nice(Math.min(...vals), Math.max(...vals));
+  const X = i => m.l + (n === 1 ? iw / 2 : i * iw / (n - 1));
+  const Y = v => m.t + ih - (v - y0) / (y1 - y0) * ih;
+  const ci = o.xs.indexOf(o.cur);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${o.title}">`;
+  for (const t of ticks) s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/>` +
+    `<text x="${m.l - 8}" y="${Y(t) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--f-mono)">${fmtTick(t)}</text>`;
+  const every = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(iw / 36))));
+  o.xs.forEach((x, i) => {
+    const isCur = i === ci;
+    if (!isCur && (i % every !== 0 || (ci >= 0 && Math.abs(X(i) - X(ci)) < 28))) return;
+    s += `<text x="${X(i)}" y="${H - 6}" text-anchor="middle" font-size="11" font-family="var(--f-mono)" fill="${isCur ? "var(--ink)" : "var(--muted)"}"${isCur ? ' font-weight="600"' : ""}>${x}T</text>`;
+  });
+  if (refOk) {
+    const y = Y(o.ref.y);
+    s += `<line x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}" stroke="var(--ink-2)" stroke-width="1.25" stroke-dasharray="5 4"/>` +
+      `<text x="${m.l + 6}" y="${y - 6}" font-size="11" fill="var(--ink-2)">${o.ref.label}</text>`;
+  }
+  const pts = o.ys.map((v, i) => Number.isFinite(v) ? `${X(i)},${Y(v)}` : null).filter(Boolean);
+  if (pts.length > 1) s += `<polyline points="${pts.join(" ")}" fill="none" stroke="var(--series)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  o.ys.forEach((v, i) => {
+    if (!Number.isFinite(v)) return;
+    const isCur = i === ci, hol = o.hollow && o.hollow(i);
+    s += `<circle cx="${X(i)}" cy="${Y(v)}" r="${isCur ? 6 : 4}" fill="${hol ? "var(--panel)" : isCur ? "var(--accent)" : "var(--series)"}" stroke="${hol ? (isCur ? "var(--accent)" : "var(--series)") : "var(--panel)"}" stroke-width="2"/>`;
+  });
+  if (ci >= 0 && Number.isFinite(o.ys[ci])) s += `<text x="${X(ci)}" y="${Y(o.ys[ci]) - 12}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">${o.fmtY(o.ys[ci])}</text>`;
+  s += `<line class="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" stroke="var(--line-2)" visibility="hidden"/>`;
+  s += `<rect class="hit" x="${m.l - 12}" y="0" width="${iw + 24}" height="${H}" fill="transparent" style="cursor:pointer"/></svg>`;
+  host.innerHTML = `<div class="ttl">${o.title}</div>` + s;
+  const tip = el("div", "tip"); tip.hidden = true; host.append(tip);
+  const svg = host.querySelector("svg"), xh = svg.querySelector(".xh"), hit = svg.querySelector(".hit");
+  const idxAt = ev => { const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * W / r.width;
+    return Math.max(0, Math.min(n - 1, Math.round((px - m.l) / (iw / Math.max(1, n - 1))))); };
+  const show = i => {
+    xh.setAttribute("x1", X(i)); xh.setAttribute("x2", X(i)); xh.setAttribute("visibility", "visible");
+    tip.replaceChildren(el("div", "h", o.head(i)), ...o.tip(i).map(([k, v]) => { const r = el("div", "r"); r.append(el("span", null, k), el("b", null, v)); return r; }));
+    tip.hidden = false;
+    const tx = X(i) * host.clientWidth / W, w = tip.offsetWidth;
+    tip.style.left = Math.max(0, tx + 14 + w > host.clientWidth ? tx - 14 - w : tx + 14) + "px";
+    tip.style.top = "22px";
+  };
+  hit.addEventListener("pointermove", e => show(idxAt(e)));
+  hit.addEventListener("pointerleave", () => { tip.hidden = true; xh.setAttribute("visibility", "hidden"); });
+  hit.addEventListener("click", e => o.onPick && o.onPick(o.xs[idxAt(e)]));
+}
+
+/* ========== 动力 · 齿比 ========== */
+function renderDrive() {
+  const d = D;
+  tiles($("#drive-tiles"), [
+    { k: "带载估算极速", v: fmt(d.vmax, 1), u: "km/h", key: 1, s: `空载 ${fmt(d.vmax0, 1)} km/h · 电机空载 ${fmt(d.rpm0, 0)} rpm` },
+    { k: "总减速比 FDR", v: fmt(d.fdr, 3), u: ": 1", s: `一级 ${S.spur}/${S.pinion} = ${fmt(S.spur / S.pinion, 3)}，× 内部 ${fmtIn(S.internal)}` },
+    { k: "Rollout", v: fmt(d.roll, 2), u: "mm / 电机转", s: "电机转一圈，车前进的距离（房车圈常用）" },
+    { k: "地面推力", v: fmt(d.F, 1), u: "N", s: `电机 ${fmt(d.tm, 3)} N·m → 轮合计 ${fmt(d.tw, 3)} N·m（Kt ${fmt(C.kt(S.kv) * 1000, 3)} mN·m/A）` },
+    { k: "加速度", v: fmt(d.a, 2), u: "m/s²", s: `${fmt(d.a / G, 2)} g · 动力可给 ${fmt(d.aRaw, 2)} m/s²`,
+      pill: d.aRaw > d.aLim ? pill("warn", "受抓地力限制，会打滑") : pill("good", "未超抓地极限") },
+    { k: `0 → ${fmtIn(S.accTo)} km/h`, v: fmt(d.tAcc, 2), u: "s", s: "匀加速近似，偏乐观" },
+  ]);
+
+  const tc = $("#tgt-card");
+  tc.replaceChildren(el("h4", null, `反推：带载跑到 ${fmtIn(S.target)} km/h`));
+  if (!(d.needP > 0) || !Number.isFinite(d.needP)) { tc.append(el("p", "note", "参数无效，无法反推")); }
+  else {
+    tc.append(el("p", "sub", `需要总减速比 ${fmt(d.needFdr, 3)}。主齿 ${S.spur}T、内部减速比 ${fmtIn(S.internal)} 不变时，马达齿 ≈ ${fmt(d.needP, 2)}T。点一下换上：`));
+    const row = el("div", "row-flex");
+    for (const p of [...new Set([Math.max(Math.floor(d.needP), 1), Math.max(Math.ceil(d.needP), 1)])]) {
+      const f = C.fdr(p, S.spur, S.internal), sp = C.topSpeed(S.kv, d.v, f, S.tire, S.lf);
+      const b = el("button", "opt" + (p === S.pinion ? " on" : "")); b.type = "button"; b.dataset.pin = p;
+      b.append(el("b", null, `${p}T`), el("span", null, `FDR ${fmt(f, 3)} · ${fmt(sp, 1)} km/h`));
+      row.append(b);
+    }
+    const now = el("div", "opt on"); now.style.cursor = "default";
+    if (![...row.children].some(b => +b.dataset.pin === S.pinion)) { now.className = "opt"; now.append(el("b", null, `当前 ${S.pinion}T`), el("span", null, `${fmt(d.vmax, 1)} km/h`)); row.append(now); }
+    tc.append(row);
+  }
+}
+function pinRange() {
+  let lo = S.pinion - 6, hi = S.pinion + 6;
+  if (Number.isFinite(D.needP) && D.needP > 0) { lo = Math.min(lo, Math.floor(D.needP) - 3); hi = Math.max(hi, Math.ceil(D.needP) + 3); }
+  if (hi - lo > 30) { lo = S.pinion - 12; hi = S.pinion + 12; }
+  return [Math.max(6, lo), Math.max(Math.max(6, lo) + 4, hi)];
+}
+function renderDriveCharts() {
+  const [lo, hi] = pinRange(), rows = [];
+  for (let p = lo; p <= hi; p++) {
+    const fdr = C.fdr(p, S.spur, S.internal), F = C.thrust(C.wheelTorque(D.tm, fdr, S.eff), S.tire);
+    rows.push({ p, fdr, roll: C.rollout(fdr, S.tire), vmax: C.topSpeed(S.kv, D.v, fdr, S.tire, S.lf), F, a: Math.min(F / S.mass, D.aLim), lim: F > D.gripF });
+  }
+  $("#gt-sub").textContent = `主齿 ${S.spur}T、内部减速比 ${fmtIn(S.internal)} 不变，马达齿 ${lo}–${hi}T 时的带载极速和地面推力。点图上的点可直接换齿。`;
+  const xs = rows.map(r => r.p);
+  const head = i => `马达齿 ${rows[i].p}T · FDR ${fmt(rows[i].fdr, 3)}`;
+  const tip = i => [["带载极速", fmt(rows[i].vmax, 1) + " km/h"], ["地面推力", fmt(rows[i].F, 1) + " N" + (rows[i].lim ? "（打滑）" : "")], ["Rollout", fmt(rows[i].roll, 2) + " mm"]];
+  const pick = p => { if (p !== S.pinion) { S.pinion = p; update(); toast(`马达齿已换成 ${p}T`); } };
+  lineChart($("#ch-speed"), { title: "带载极速 km/h", xs, ys: rows.map(r => r.vmax), fmtY: v => fmt(v, 1), cur: S.pinion,
+    ref: { y: S.target, label: `目标 ${fmtIn(S.target)} km/h` }, head, tip, onPick: pick });
+  lineChart($("#ch-thrust"), { title: "地面推力 N（空心点 = 超过抓地上限，会打滑）", xs, ys: rows.map(r => r.F), fmtY: v => fmt(v, 1), cur: S.pinion,
+    ref: { y: D.gripF, label: `抓地上限 μ·m·g = ${fmt(D.gripF, 1)} N` }, hollow: i => rows[i].lim, head, tip, onPick: pick });
+
+  const t = el("table", "data"), hr = t.createTHead().insertRow();
+  for (const h of ["马达齿", "FDR", "Rollout mm", "带载极速 km/h", "推力 N", "加速度 m/s²"]) hr.append(el("th", null, h));
+  const tb = t.createTBody();
+  for (const r of rows) {
+    const tr = tb.insertRow(); if (r.p === S.pinion) tr.className = "on";
+    for (const v of [r.p + "T", fmt(r.fdr, 3), fmt(r.roll, 2), fmt(r.vmax, 1), fmt(r.F, 1) + (r.lim ? " *" : ""), fmt(r.a, 2)]) tr.append(el("td", null, v));
+  }
+  $("#gt-table").replaceChildren(t, el("p", "note", "* 推力超过抓地上限，实际会打滑；加速度已按 μ·g 截断"));
+}
+
+/* ========== 齿轮几何 + 啮合图 ========== */
+const gearModule = () => S.gunit === "dp" ? C.dp2m(S.gdp) : S.gm;
+const signed = (x, d = 3) => (x >= 0 ? "+" : "−") + fmt(Math.abs(x), d);
+
+function gearPath(m, z) {
+  const pa = 20 * RAD, r = m * z / 2, ra = r + m, rf = Math.max(r - 1.25 * m, 0.2 * m), rb = r * Math.cos(pa);
+  const inv = a => Math.tan(a) - a;
+  const half = rho => Math.PI / (2 * z) + inv(pa) - inv(Math.acos(Math.min(1, rb / rho))); // 该半径处的半齿厚角
+  const r0 = Math.max(rb, rf), N = 8, flank = [], pts = [], pitch = 2 * Math.PI / z;
+  for (let i = 0; i <= N; i++) { const rho = r0 + (ra - r0) * i / N; flank.push([rho, Math.max(half(rho), 0)]); }
+  const P = (rho, ang) => pts.push(`${(rho * Math.cos(ang)).toFixed(3)},${(rho * Math.sin(ang)).toFixed(3)}`);
+  const h0 = flank[0][1];
+  for (let k = 0; k < z; k++) {
+    const c = k * pitch;
+    P(rf, c - h0);                                                   // 基圆以下用径向线近似
+    for (const [rho, h] of flank) P(rho, c - h);
+    for (let i = flank.length - 1; i >= 0; i--) P(flank[i][0], c + flank[i][1]);
+    P(rf, c + h0);
+    for (let j = 1; j < 4; j++) P(rf, c + h0 + (pitch - 2 * h0) * j / 4); // 齿根圆弧
+  }
+  return "M" + pts.join("L") + "Z";
+}
+
+let spin = false, ang = 0, lastT = 0, GR = null;
+function placeGears() {
+  if (!GR) return;
+  GR.g1.setAttribute("transform", `translate(${GR.c1} ${GR.cy}) rotate(${ang})`);
+  if (GR.g2) GR.g2.setAttribute("transform", `translate(${GR.c2} ${GR.cy}) rotate(${GR.ph - ang * GR.ratio})`);
+}
+function tick(t) {
+  if (!spin) return;
+  if (lastT) ang = (ang + (t - lastT) * 0.024) % 360;
+  lastT = t; placeGears(); requestAnimationFrame(tick);
+}
+function drawGears(m, z1, z2) {
+  const fig = $("#geom-fig");
+  if (!(m > 0) || !(z1 >= 3) || z2 < 0) { fig.replaceChildren(el("p", "note", "参数无效")); GR = null; return; }
+  const two = z2 >= 3, r1 = m * z1 / 2, ra1 = r1 + m, r2 = two ? m * z2 / 2 : 0, ra2 = two ? r2 + m : 0;
+  const R = Math.max(ra1, ra2), pad = R * 0.1 + m;
+  const c1 = pad + ra1, c2 = c1 + r1 + r2, cy = pad + R;
+  const W = (two ? c2 + ra2 : c1 + ra1) + pad, dimY = cy + R + pad * 1.2, fs = W / 34, sw = W / 520, H = dimY + fs * 2.2;
+  const pc = (cx, r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-dasharray="${sw * 16} ${sw * 5} ${sw * 2} ${sw * 5}"/>`;
+  const cross = cx => `<path d="M${cx - m * 1.5},${cy}H${cx + m * 1.5}M${cx},${cy - m * 1.5}V${cy + m * 1.5}" stroke="currentColor" stroke-width="${sw}"/>`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${two ? `${z1} 齿与 ${z2} 齿啮合，中心距 ${fmt(r1 + r2, 3)} mm` : `${z1} 齿齿轮`}">`;
+  s += `<g class="g1"><path d="${gearPath(m, z1)}" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="${sw * 2}" stroke-linejoin="round"/>` +
+    `<circle r="${Math.max(r1 * 0.22, m * 0.8)}" fill="var(--sunk)" stroke="var(--accent)" stroke-width="${sw * 2}"/>` +
+    `<rect x="${Math.max(r1 * 0.22, m * 0.8) * 0.55}" y="${-m * 0.25}" width="${m * 0.7}" height="${m * 0.5}" fill="var(--accent)"/></g>`;
+  if (two) s += `<g class="g2"><path d="${gearPath(m, z2)}" fill="var(--panel)" stroke="var(--ink-2)" stroke-width="${sw * 2}" stroke-linejoin="round"/>` +
+    `<circle r="${Math.max(r2 * 0.18, m * 0.8)}" fill="var(--sunk)" stroke="var(--ink-2)" stroke-width="${sw * 2}"/>` +
+    `<rect x="${Math.max(r2 * 0.18, m * 0.8) * 0.6}" y="${-m * 0.25}" width="${m * 0.7}" height="${m * 0.5}" fill="var(--ink-2)"/></g>`;
+  s += pc(c1, r1) + cross(c1);
+  if (two) {
+    s += pc(c2, r2) + cross(c2);
+    s += `<path d="M${c1},${cy + m * 2}V${dimY + fs * 0.4}M${c2},${cy + m * 2}V${dimY + fs * 0.4}" stroke="currentColor" stroke-width="${sw}" opacity=".6"/>`;
+    s += `<path d="M${c1},${dimY}H${c2}M${c1 + fs * 0.5},${dimY - fs * 0.25}L${c1},${dimY}L${c1 + fs * 0.5},${dimY + fs * 0.25}M${c2 - fs * 0.5},${dimY - fs * 0.25}L${c2},${dimY}L${c2 - fs * 0.5},${dimY + fs * 0.25}" fill="none" stroke="currentColor" stroke-width="${sw * 1.5}"/>`;
+    s += `<text x="${(c1 + c2) / 2}" y="${dimY + fs * 1.3}" text-anchor="middle" font-size="${fs}" fill="var(--ink)" font-family="var(--f-mono)">a = ${fmt(r1 + r2, 3)} mm</text>`;
+  }
+  s += `</svg>`;
+  fig.innerHTML = s;
+  fig.append(el("figcaption", null, two ? `蓝色为齿轮 1（${z1} 齿），灰色为齿轮 2（${z2} 齿），模数 ${fmt(m, 3)}。` : `齿轮 1（${z1} 齿），模数 ${fmt(m, 3)}。齿轮 2 填 3 齿以上可看啮合。`));
+  const svg = fig.querySelector("svg");
+  GR = { g1: svg.querySelector(".g1"), g2: svg.querySelector(".g2"), c1, c2, cy, ratio: two ? z1 / z2 : 0, ph: two ? 180 - 180 / z2 : 0 };
+  placeGears();
+}
+function renderGeom() {
+  const m = gearModule(), z1 = S.z1, z2 = S.z2, zmin = C.zMin(), two = z2 > 0;
+  tiles($("#geom-tiles"), [
+    { k: "模数 m", v: fmt(m, 4), u: "mm", s: `≈ ${fmt(C.m2dp(m), 1)} DP（DP = 25.4 / m）` },
+    two && { k: "标准中心距 a", v: fmt(C.center(m, z1, z2), 3), u: "mm", key: 1, s: `a = m(z1 + z2) / 2` },
+    two && { k: "传动比", v: fmt(z2 / z1, 3), u: ": 1", s: `${z2} / ${z1}` },
+  ].filter(Boolean));
+  const gs = [[z1, C.geom(m, z1)]].concat(two ? [[z2, C.geom(m, z2)]] : []);
+  const t = el("table", "data"), hr = t.createTHead().insertRow();
+  hr.append(el("th", null, "尺寸"), ...gs.map(([z]) => el("th", null, `${z} 齿`)));
+  const tb = t.createTBody();
+  for (const [lab, k] of [["分度圆直径 d", "d"], ["齿顶圆直径 da", "da"], ["齿根圆直径 df", "df"], ["基圆直径 db", "db"], ["齿距 p", "p"], ["齿厚 s", "s"], ["全齿高 h", "h"]]) {
+    const tr = tb.insertRow(); tr.append(el("td", "l", lab), ...gs.map(([, g]) => el("td", null, fmt(g[k], 3))));
+  }
+  $("#geom-table").replaceChildren(t);
+  const w = $("#geom-warn"); w.replaceChildren();
+  for (const [z] of gs) if (z < zmin) {
+    const d = el("div", "warnline");
+    d.append(pill("warn", `${z} 齿`), el("span", null, `少于不根切最少齿数 ${fmt(zmin, 1)}（2 / sin²20°），标准齿形会根切，需要变位或接受强度下降。`));
+    w.append(d);
+  }
+  drawGears(m, z1, z2);
+}
+
+/* ========== 固定中心距组合 ========== */
+function renderCombo() {
+  const host = $("#combo-out"), m = S.cm, a = S.ca, total = 2 * a / m, lo = Math.floor(total + 1e-9), hi = Math.ceil(total - 1e-9);
+  host.replaceChildren(el("h4", null, "可用组合"));
+  host.append(el("p", "sub", lo === hi ? `齿数和 2a / m = ${fmt(total, 2)}，正好是整数，可以零误差。`
+    : `齿数和 2a / m = ${fmt(total, 2)}，不是整数：齿数和取 ${hi} 时中心距 ${fmt(m * hi / 2, 3)} mm（${signed(m * hi / 2 - a)}），取 ${lo} 时 ${fmt(m * lo / 2, 3)} mm（${signed(m * lo / 2 - a)}）。`));
+  if (S.pmin > S.pmax || S.smin > S.smax) { host.append(el("p", "note", "「最少」不能大于「最多」，请检查齿数范围。")); return; }
+  const res = C.combos(m, a, S.pmin, S.pmax, S.smin, S.smax, S.tol);
+  if (!res.length) { host.append(el("p", "note", "没有找到组合，放宽误差或齿数范围试试。")); return; }
+  const t = el("table", "data"), hr = t.createTHead().insertRow();
+  for (const h of ["马达齿", "主齿", "齿比", "中心距误差 mm", ""]) hr.append(el("th", null, h));
+  const tb = t.createTBody();
+  for (const r of res) {
+    const tr = tb.insertRow(); if (r.p === S.pinion && r.s === S.spur) tr.className = "on";
+    tr.append(el("td", null, r.p + "T"), el("td", null, r.s + "T"), el("td", null, fmt(r.r, 3)), el("td", null, signed(r.e)));
+    const b = el("button", "mini", "用到「动力」页"); b.type = "button"; b.dataset.pin = r.p; b.dataset.spur = r.s;
+    const td = el("td"); td.append(b); tr.append(td);
+  }
+  const sc = el("div", "scroll"); sc.append(t);
+  host.append(el("p", "sub", `共 ${res.length} 组（容差 ±${fmtIn(S.tol)} mm）`), sc);
+}
+
+/* ========== 材料安全系数条形图 ========== */
+function matBars(host, rows, target, warnAt, pick) {
+  const finite = rows.map(r => r.sf).filter(Number.isFinite);
+  const [, top, ticks] = nice(0, Math.max(target * 1.5, ...finite), 4);
+  const box = el("div", "mbars");
+  for (const r of rows) {
+    const kind = r.sf >= target ? "good" : (warnAt != null && r.sf >= warnAt) ? "warn" : "bad";
+    const row = el(pick ? "button" : "div", "mrow");
+    if (pick) { row.type = "button"; row.dataset.k = pick.k; row.dataset.v = r.n; row.setAttribute("aria-pressed", r.n === pick.sel); row.title = "选用这种材料"; }
+    const n = el("span", "n", r.n);
+    for (const t of r.tags || []) n.append(el("span", "tag", t));
+    n.append(el("small", null, r.sub));
+    const tr = el("span", "track"), b = el("i", "b " + kind), t = el("i", "t");
+    b.style.width = Math.min(100, Math.max(0.8, r.sf / top * 100)) + "%"; t.style.left = target / top * 100 + "%"; tr.append(b, t);
+    const val = el("span", "val"); val.append(el("b", null, "SF " + fmt(r.sf, 2)), pill(kind, kind === "good" ? "合格" : kind === "warn" ? "偏低" : "不足"));
+    row.append(n, tr, val); box.append(row);
+  }
+  const ax = el("div", "axis"), sc = el("div", "sc");
+  for (const tk of ticks) { const sp = el("span", null, fmtTick(tk)); sp.style.left = tk / top * 100 + "%"; sc.append(sp); }
+  ax.append(el("span"), sc, el("span", "pad")); box.append(ax);
+  host.replaceChildren(box);
+}
+
+/* ========== 齿轮强度 ========== */
+const LOBJ = { pin: ["马达齿", "mpin"], spur: ["主齿", "mspur"] };
+function gearLoad(obj) {   // 校核对象的扭矩和齿数：马达齿 / 主齿取自「动力」页
+  return obj === "pin" ? { T: D.pinionT, z: S.pinion } : obj === "spur" ? { T: D.spurT, z: S.spur } : { T: S.lt, z: S.lz };
+}
+function renderLewis() {
+  const [name, key] = LOBJ[S.lobj] || [], { T, z } = gearLoad(S.lobj);
+  const ft = C.ft(T, S.lm, z), sig = C.lewis(T, S.lm, z, S.lb, S.lk);
+  tiles($("#lewis-tiles"), [
+    { k: name ? `${name}齿根弯曲应力 σ` : "齿根弯曲应力 σ", v: fmt(sig, 1), u: "MPa", key: 1,
+      s: name ? `${name} ${z}T，扭矩 ${fmt(T, 3)} N·m（取自「动力」页），K = ${fmtIn(S.lk)}` : `σ = K·Ft / (b·m·Y)，K = ${fmtIn(S.lk)}` },
+    { k: "切向力 Ft", v: fmt(ft, 1), u: "N", s: `Ft = 2T / d，分度圆 d = ${fmt(S.lm * z, 2)} mm` },
+    { k: "Lewis 齿形系数 Y", v: fmt(C.lewisY(z), 3), s: `${z} 齿，20° 全齿高标准齿形` },
+  ]);
+  if (!(sig > 0)) { $("#lewis-bars").replaceChildren(el("p", "note", "扭矩大于 0 时显示各材料安全系数。")); return; }
+  const tagsOf = n => [n === S.mpin && "马达齿", n === S.mspur && "主齿"].filter(Boolean);
+  matBars($("#lewis-bars"), MATERIALS.map(([n, ys, tag]) => ({ n, sub: tag ? `${ys} MPa · ${tag}` : `${ys} MPa`, sf: ys / sig, tags: tagsOf(n) })),
+    2, 1.2, key ? { k: key, sel: S[key] } : null);
+}
+
+/* ========== 轴强度 ========== */
+function renderShaft() {
+  const bad = S.si >= S.sd, tau = C.tau(S.st, S.sd, S.si);
+  const tw = Gm => (S.sl > 0 && !bad) ? C.twist(S.st, S.sl, S.sd, S.si, Gm) : NaN;
+  tiles($("#shaft-tiles"), [
+    { k: "扭转剪应力 τ", v: bad ? "—" : fmt(tau, 1), u: "MPa", key: 1, s: S.si > 0 ? `空心轴 Ø${fmtIn(S.sd)} / Ø${fmtIn(S.si)}` : `实心轴 Ø${fmtIn(S.sd)}` },
+    { k: "扭转角 · 钢", v: fmt(tw(79000), 2), u: "°", s: `G ≈ 79 GPa，轴长 ${fmtIn(S.sl)} mm` },
+    { k: "扭转角 · 铝", v: fmt(tw(26000), 2), u: "°", s: "G ≈ 26 GPa" },
+  ]);
+  $("#shaft-sub").textContent = `许用剪应力取 0.5σs（最大剪应力理论，偏保守）。SF = 0.5σs ÷ τ，竖线为目标 SF ${fmtIn(S.ssf)}；最小直径按实心轴、目标 SF 计算。`;
+  const host = $("#shaft-bars");
+  if (bad) { host.replaceChildren(el("p", "note", "内径必须小于外径。")); return; }
+  if (!(tau > 0)) { host.replaceChildren(el("p", "note", "输入大于 0 的扭矩后显示各材料安全系数。")); return; }
+  matBars(host, MATERIALS.filter(mt => !mt[2]).map(([n, ys]) => ({ n, sub: `${ys} MPa · 最小 Ø${fmt(C.dMin(S.st, ys, S.ssf), 2)}`, sf: 0.5 * ys / tau, tags: n === S.mshaft ? ["选用"] : [] })),
+    S.ssf, null, { k: "mshaft", sel: S.mshaft });
+}
+
+/* ========== 电池 ========== */
+function renderBatt() {
+  const v = volts(), imax = C.maxCur(S.cap, S.crate);
+  tiles($("#batt-tiles"), [
+    { k: "续航估算", v: fmt(C.runtime(S.cap, S.avg), 1), u: "min", key: 1, s: `只用 80% 容量（锂电不建议放到底），平均 ${fmtIn(S.avg)} A` },
+    { k: "最大持续放电电流", v: fmt(imax, 0), u: "A", s: `${fmtIn(S.cap)} mAh × ${fmtIn(S.crate)}C` },
+    { k: "平均功率", v: fmt(v * S.avg, 0), u: "W", s: `${fmt(v, 2)} V × ${fmtIn(S.avg)} A` },
+    { k: "电池能量", v: fmt(S.cap / 1000 * v, 1), u: "Wh", s: "容量 × 电压" },
+  ]);
+  const host = $("#batt-load");
+  host.replaceChildren(el("h4", null, "放电余量"), el("p", "sub", `占电池最大持续电流 ${fmt(imax, 0)} A 的比例；峰值电流取自「动力」页`));
+  for (const [lab, cur] of [["平均电流", S.avg], ["峰值电流", S.cur]]) {
+    const pct = cur / imax * 100, kind = pct <= 80 ? "good" : pct <= 100 ? "warn" : "bad";
+    const row = el("div", "mrow"), top = el("div", "n", `${lab} ${fmtIn(cur)} A`);
+    const mt = el("div", "meter"), fill = el("i"); fill.style.width = Math.min(100, Math.max(0, pct)) + "%"; fill.style.background = `var(--${kind})`; mt.append(fill);
+    const val = el("div", "val"); val.append(el("b", null, fmt(pct, 0) + "%"), pill(kind, kind === "good" ? "余量充足" : kind === "warn" ? "接近上限" : "超出额定"));
+    row.append(top, mt, val); host.append(row);
+  }
+  host.append(el("p", "note", "长时间接近额定电流时电池发热、电压跌落明显，实际车速会低于理论值。"));
+}
+
+/* ========== 车身 ========== */
+const cgMark = (x, y, R) => `<circle cx="${x}" cy="${y}" r="${R}" fill="var(--panel)" stroke="var(--ink)" stroke-width="${R * 0.16}"/>` +
+  `<path d="M${x},${y}V${y - R}A${R},${R} 0 0 1 ${x + R},${y}ZM${x},${y}V${y + R}A${R},${R} 0 0 1 ${x - R},${y}Z" fill="var(--ink)"/>`;
+function dim(x1, x2, y, label, fs, sw) {
+  const a = fs * 0.45;
+  return `<path d="M${x1},${y}H${x2}M${x1 + a},${y - a / 2}L${x1},${y}L${x1 + a},${y + a / 2}M${x2 - a},${y - a / 2}L${x2},${y}L${x2 - a},${y + a / 2}" fill="none" stroke="currentColor" stroke-width="${sw}"/>` +
+    `<text x="${(x1 + x2) / 2}" y="${y - fs * 0.45}" text-anchor="middle" font-size="${fs}" fill="var(--ink)" font-family="var(--f-mono)">${label}</text>`;
+}
+function drawSide(x) {
+  const r = S.tire / 2, padX = r + 24, W = S.wb + 2 * padX, fs = W / 30, sw = W / 400;
+  const gy = Math.max(S.ch, 2 * r) + fs * 2.5, H = gy + fs * 4.6, fx = padX, rx = padX + S.wb, cgx = fx + x, cgy = gy - S.ch, R = fs * 0.55;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="侧视：重心距前轴 ${fmt(x, 1)} mm，高 ${fmtIn(S.ch)} mm">`;
+  s += `<line x1="0" x2="${W}" y1="${gy}" y2="${gy}" stroke="currentColor" stroke-width="${sw * 1.5}"/>`;
+  s += `<rect x="${fx - r * 0.8}" y="${gy - r - fs * 0.35}" width="${S.wb + r * 1.6}" height="${fs * 0.7}" rx="${fs * 0.35}" fill="var(--sunk)" stroke="currentColor" stroke-width="${sw}"/>`;
+  for (const wx of [fx, rx]) s += `<circle cx="${wx}" cy="${gy - r}" r="${r}" fill="none" stroke="currentColor" stroke-width="${sw * 2}"/><circle cx="${wx}" cy="${gy - r}" r="${r * 0.12}" fill="currentColor"/>`;
+  s += `<text x="${fx}" y="${gy - 2 * r - fs * 0.5}" text-anchor="middle" font-size="${fs * 0.85}" fill="var(--muted)">前</text><text x="${rx}" y="${gy - 2 * r - fs * 0.5}" text-anchor="middle" font-size="${fs * 0.85}" fill="var(--muted)">后</text>`;
+  s += `<line x1="${cgx}" x2="${cgx}" y1="${cgy}" y2="${gy + fs * 1.8}" stroke="var(--accent)" stroke-width="${sw}" stroke-dasharray="${sw * 4} ${sw * 3}"/>`;
+  s += cgMark(cgx, cgy, R);
+  s += dim(fx, cgx, gy + fs * 1.8, `${fmt(x, 1)}`, fs, sw) + dim(fx, rx, gy + fs * 4, `轴距 ${fmtIn(S.wb)}`, fs, sw);
+  s += `<text x="${cgx + R + fs * 0.4}" y="${cgy - R * 0.2}" font-size="${fs}" fill="var(--ink)" font-family="var(--f-mono)">h ${fmtIn(S.ch)}</text></svg>`;
+  $("#cs-side").innerHTML = s;
+  $("#cs-side").append(el("figcaption", null, "侧视（车头朝左）：重心距前轴与重心高度，单位 mm"));
+}
+function drawFront(g) {
+  const r = S.tire / 2, tw = S.tw, tireW = Math.max(r * 0.75, 16), padX = tireW / 2 + 20, W = tw + 2 * padX, fs = W / 22, sw = W / 300;
+  const gy = Math.max(S.ch, 2 * r) + fs * 1.8, H = gy + fs * 2.4, cx = W / 2, cgy = gy - S.ch, R = fs * 0.5;
+  const lx = cx - tw / 2, rx = cx + tw / 2, hitX = cx + S.mu * S.ch, slide = S.mu < g;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="正视：侧翻临界 ${fmt(g, 2)} g，轮胎 μ ${fmtIn(S.mu)}">`;
+  s += `<line x1="0" x2="${W}" y1="${gy}" y2="${gy}" stroke="currentColor" stroke-width="${sw * 1.5}"/>`;
+  for (const x of [lx, rx]) s += `<rect x="${x - tireW / 2}" y="${gy - 2 * r}" width="${tireW}" height="${2 * r}" rx="${tireW * 0.3}" fill="var(--sunk)" stroke="currentColor" stroke-width="${sw * 1.5}"/>`;
+  s += `<line x1="${cx}" y1="${cgy}" x2="${rx}" y2="${gy}" stroke="var(--ink-2)" stroke-width="${sw * 1.5}" stroke-dasharray="${sw * 5} ${sw * 3}"/>`;
+  s += `<line x1="${cx}" y1="${cgy}" x2="${Math.min(hitX, W)}" y2="${hitX <= W ? gy : cgy + (W - cx) / S.mu}" stroke="${slide ? "var(--good)" : "var(--bad)"}" stroke-width="${sw * 2.5}"/>`;
+  s += cgMark(cx, cgy, R);
+  s += dim(lx, rx, gy + fs * 1.6, `轮距 ${fmtIn(tw)}`, fs * 0.9, sw);
+  s += `</svg>`;
+  $("#cs-front").innerHTML = s;
+  $("#cs-front").append(el("figcaption", null, `正视：虚线 = 侧翻临界线（${fmt(g, 2)} g），实线 = 轮胎抓地极限时的合力方向（μ ${fmtIn(S.mu)}）。实线落在轮胎内侧就是先侧滑。`));
+}
+function renderChassis() {
+  const tot = S.cf + S.cr, x = C.cg(S.cf, S.cr, S.wb), g = C.rollG(S.tw, S.ch), ok = tot > 0;
+  tiles($("#cs-tiles"), [
+    { k: "总重", v: fmt(tot, 2), u: "kg" },
+    { k: "前 / 后轴荷", v: ok ? `${fmt(S.cf / tot * 100, 1)} / ${fmt(S.cr / tot * 100, 1)}` : "—", u: "%" },
+    { k: "重心距前轴", v: fmt(x, 1), u: "mm", s: `距后轴 ${fmt(S.wb - x, 1)} mm` },
+    { k: "静态侧翻临界横向加速度", v: fmt(g, 2), u: "g", key: 1, s: `≈ 轮距 / (2 × 重心高)。轮胎 μ = ${fmtIn(S.mu)}（取自「动力」页）`,
+      pill: S.mu < g ? pill("good", "先侧滑，不会侧翻") : pill("bad", "抓地力超过临界值，急弯可能侧翻") },
+  ]);
+  if (ok && Number.isFinite(x) && Number.isFinite(g)) { drawSide(x); drawFront(g); }
+}
+
+/* ========== 总结 · BOM ========== */
+const TABNAME = { drive: "动力 · 齿比", gear: "齿轮设计", shaft: "轴强度", battery: "电池 · 续航", chassis: "车身 · 重心" };
+const PICKNAME = { mpin: "马达齿材料", mspur: "主齿材料", mshaft: "轴材料" };
+let BOM_TSV = "";
+function gearCheck(obj, mat) {
+  const { T, z } = gearLoad(obj), sig = C.lewis(T, S.lm, z, S.lb, S.lk), sf = MAT[mat] / sig;
+  const kind = sf >= 2 ? "good" : sf >= 1.2 ? "warn" : "bad";
+  return { T, z, kind, text: { good: "合格", warn: "偏低", bad: "不足" }[kind], note: `σ ${fmt(sig, 1)} MPa · SF ${fmt(sf, 2)}` };
+}
+function renderSummary() {
+  const d = D, imax = C.maxCur(S.cap, S.crate), pk = S.cur / imax * 100, tot = S.cf + S.cr, rg = C.rollG(S.tw, S.ch);
+  const gp = gearCheck("pin", S.mpin), gs = gearCheck("spur", S.mspur);
+  const tau = C.tau(S.st, S.sd, S.si), ssf = 0.5 * MAT[S.mshaft] / tau, hollowBad = S.si >= S.sd;
+  const gearSpec = (z, T) => `${z}T · 模数 ${fmtIn(S.lm)} · 齿宽 ${fmtIn(S.lb)} mm · 扭矩 ${fmt(T, 3)} N·m · 冲击系数 ${fmtIn(S.lk)}`;
+  // [部件, 规格 / 参数, 材料, 数量, 校核 {kind,text,note} | null, 来源页]
+  const rows = [
+    ["电机", `${fmtIn(S.kv)} KV · 空载 ${fmt(d.rpm0, 0)} rpm · 工作电流 ${fmtIn(S.cur)} A · 空载电流 ${fmtIn(S.i0)} A`, "—", "1", null, "drive"],
+    ["电池", `${S.vmode === "v" ? "" : S.cells + "S 锂电 · "}${fmt(d.v, 2)} V · ${fmtIn(S.cap)} mAh · ${fmtIn(S.crate)}C`, "—", "1",
+      { kind: pk <= 80 ? "good" : pk <= 100 ? "warn" : "bad", text: pk <= 80 ? "电流余量充足" : pk <= 100 ? "接近额定电流" : "超出额定电流", note: `峰值 ${fmtIn(S.cur)} A，占额定 ${fmt(pk, 0)}%` }, "battery"],
+    ["马达齿", gearSpec(gp.z, gp.T), S.mpin, "1", gp, "gear"],
+    ["主齿", gearSpec(gs.z, gs.T), S.mspur, "1", gs, "gear"],
+    ["差速器 / 变速箱", S.internal === 1 ? "无内部减速" : `内部减速比 ${fmtIn(S.internal)} : 1 · 总减速比 FDR ${fmt(d.fdr, 3)}`, "—", S.internal === 1 ? "—" : "1", null, "drive"],
+    ["传动轴 / 半轴", `Ø${fmtIn(S.sd)}${S.si > 0 ? `，内径 Ø${fmtIn(S.si)}` : " 实心"} · 扭矩 ${fmtIn(S.st)} N·m · 长 ${fmtIn(S.sl)} mm`, S.mshaft, String(S.swheels),
+      hollowBad ? { kind: "bad", text: "内径不能大于外径", note: "" }
+        : { kind: ssf >= S.ssf ? "good" : "bad", text: ssf >= S.ssf ? "合格" : "不足", note: `τ ${fmt(tau, 1)} MPa · SF ${fmt(ssf, 2)}（目标 ${fmtIn(S.ssf)}）` }, "shaft"],
+    ["轮胎", `Ø${fmtIn(S.tire)} mm · 摩擦系数 μ ${fmtIn(S.mu)}`, "—", "4",
+      { kind: d.aRaw > d.aLim ? "warn" : "good", text: d.aRaw > d.aLim ? "推力超抓地，会打滑" : "推力未超抓地", note: `推力 ${fmt(d.F, 1)} N，抓地上限 ${fmt(d.gripF, 1)} N` }, "drive"],
+    ["整车", `${fmt(tot, 2)} kg · 前/后轴荷 ${fmt(S.cf / tot * 100, 1)} / ${fmt(S.cr / tot * 100, 1)} % · 轴距 ${fmtIn(S.wb)} · 轮距 ${fmtIn(S.tw)} · 重心高 ${fmtIn(S.ch)} mm`, "—", "—",
+      { kind: S.mu < rg ? "good" : "bad", text: S.mu < rg ? "先侧滑，不会侧翻" : "急弯可能侧翻", note: `侧翻临界 ${fmt(rg, 2)} g，μ ${fmtIn(S.mu)}` }, "chassis"],
+  ];
+  const t = el("table", "data bom"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+  for (const h of ["序号", "部件", "规格 / 参数", "材料", "数量", "校核", "来源"]) hr.append(el("th", null, h));
+  const tsv = [["序号", "部件", "规格 / 参数", "材料", "数量", "校核", "说明"].join("\t")], cnt = { good: 0, warn: 0, bad: 0 };
+  rows.forEach(([part, spec, mat, qty, c, tab], i) => {
+    const tr = tb.insertRow(), tdc = el("td", "ck"), tdg = el("td"), go = el("button", "mini", TABNAME[tab]);
+    tr.append(el("td", "c", String(i + 1)), el("td", "part", part), el("td", "spec", spec), el("td", "mat", mat), el("td", "c", qty));
+    if (c) { cnt[c.kind]++; tdc.append(pill(c.kind, c.text)); if (c.note) tdc.append(el("small", null, c.note)); } else tdc.textContent = "—";
+    go.type = "button"; go.dataset.tab = tab; tdg.append(go); tr.append(tdc, tdg);
+    tsv.push([i + 1, part, spec, mat, qty, c ? `${ICON[c.kind]} ${c.text}` : "—", c ? c.note : ""].join("\t"));
+  });
+  $("#bom").replaceChildren(t);
+  BOM_TSV = tsv.join("\n");
+  const total = cnt.good + cnt.warn + cnt.bad;
+  tiles($("#sum-tiles"), [
+    { k: "带载估算极速", v: fmt(d.vmax, 1), u: "km/h", key: 1, s: `FDR ${fmt(d.fdr, 3)} · ${S.pinion}T / ${S.spur}T` },
+    { k: "地面推力", v: fmt(d.F, 1), u: "N", s: `加速度 ${fmt(d.a, 2)} m/s²（${fmt(d.a / G, 2)} g）` },
+    { k: `0 → ${fmtIn(S.accTo)} km/h`, v: fmt(d.tAcc, 2), u: "s", s: "匀加速近似，偏乐观" },
+    { k: "续航估算", v: fmt(C.runtime(S.cap, S.avg), 1), u: "min", s: `平均 ${fmtIn(S.avg)} A，用 80% 容量` },
+    { k: "总重", v: fmt(tot, 2), u: "kg", s: `重心距前轴 ${fmt(C.cg(S.cf, S.cr, S.wb), 1)} mm` },
+    { k: "校核", v: `${cnt.good} / ${total}`, u: "项合格", s: `偏低 ${cnt.warn} 项 · 不足 ${cnt.bad} 项`,
+      pill: cnt.bad ? pill("bad", "有不足项，见下表") : cnt.warn ? pill("warn", "有偏低项，见下表") : pill("good", "全部合格") },
+  ]);
+}
+
+/* ========== 刷新 ========== */
+const TABS = ["drive", "gear", "shaft", "battery", "chassis", "summary"];
+let TAB = "drive";
+function renderCharts() { if (TAB === "drive") renderDriveCharts(); }
+function render() {
+  renderDrive(); renderGeom(); renderCombo(); renderLewis(); renderShaft(); renderBatt(); renderChassis(); renderSummary();
+  renderCharts();
+}
+function update() { D = derive(); render(); sync(); save(); }
+function showTab(id, remember) {
+  TAB = TABS.includes(id) ? id : "drive";
+  for (const t of TABS) { $("#" + t).hidden = t !== TAB; $("#t-" + t).setAttribute("aria-selected", t === TAB); }
+  if (remember) { try { history.replaceState(null, "", "#" + TAB); } catch (e) {} try { localStorage.setItem(KEY + "-tab", TAB); } catch (e) {} }
+  renderCharts();
+}
+let toastT;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2200); }
+
+/* ========== 事件 ========== */
+document.addEventListener("input", e => {
+  const t = e.target, k = t.dataset && t.dataset.k;
+  if (!k || !(k in DEF)) return;
+  if (typeof DEF[k] === "string") { S[k] = t.value; update(); return; }
+  let v = t.value.trim() === "" ? NaN : Number(t.value);
+  if (INTK.has(k)) v = Math.round(v);
+  const field = t.closest(".field"), okv = Number.isFinite(v) && (ZEROK.has(k) ? v >= 0 : v > 0);
+  if (field) field.classList.toggle("bad", !okv);
+  if (!okv) return;
+  S[k] = v; update();
+});
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.type !== "number" || !t.dataset.k) return;
+  t.closest(".field").classList.remove("bad"); t.value = fmtIn(S[t.dataset.k]);
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const ds = b.dataset;
+  if (ds.tab) { showTab(ds.tab, true); window.scrollTo(0, 0); }
+  else if (ds.src) { const v = D[ds.src]; if (Number.isFinite(v)) { S[ds.k] = +v.toFixed(3); update(); toast(`已带入${ds.t} ${fmt(v, 3)}`); } }
+  else if (ds.k && ds.v != null) {
+    const k = ds.k; S[k] = typeof DEF[k] === "number" ? +ds.v : ds.v; update();
+    if (PICKNAME[k]) toast(`${PICKNAME[k]}：${ds.v}`);
+  }
+  else if (ds.pin) {
+    S.pinion = +ds.pin; if (ds.spur) S.spur = +ds.spur; update();
+    toast(ds.spur ? `已用 ${ds.pin}T / ${ds.spur}T，去「动力」页看车速` : `马达齿已换成 ${ds.pin}T`);
+  }
+});
+$("#gt-toggle").addEventListener("click", e => {
+  const t = $("#gt-table"), b = e.currentTarget; t.hidden = !t.hidden;
+  b.setAttribute("aria-expanded", !t.hidden); b.textContent = t.hidden ? "看表格" : "收起表格";
+});
+$("#spin").addEventListener("click", e => {
+  spin = !spin; lastT = 0; e.currentTarget.setAttribute("aria-pressed", spin); e.currentTarget.textContent = spin ? "暂停" : "转动";
+  if (spin) requestAnimationFrame(tick);
+});
+$("#bom-copy").addEventListener("click", () => {
+  const fallback = () => {
+    try { const r = document.createRange(), sel = getSelection(); r.selectNodeContents($("#bom")); sel.removeAllRanges(); sel.addRange(r); } catch (e) {}
+    toast("已选中表格，按 ⌘C / Ctrl+C 复制");
+  };
+  try { navigator.clipboard.writeText(BOM_TSV).then(() => toast("已复制，可直接粘贴到 Excel / WPS"), fallback); } catch (e) { fallback(); }
+});
+$("#reset").addEventListener("click", () => {
+  S = Object.assign({}, DEF);
+  for (const f of document.querySelectorAll(".field.bad")) f.classList.remove("bad");
+  update(); toast("已恢复默认参数");
+});
+document.querySelector(".side").addEventListener("keydown", e => {
+  const fwd = e.key === "ArrowRight" || e.key === "ArrowDown", back = e.key === "ArrowLeft" || e.key === "ArrowUp";
+  if (!fwd && !back) return;
+  e.preventDefault();
+  const i = (TABS.indexOf(TAB) + (fwd ? 1 : TABS.length - 1)) % TABS.length;
+  showTab(TABS[i], true); $("#t-" + TABS[i]).focus();
+});
+
+/* ========== 启动 ========== */
+build();
+D = derive(); render(); sync();
+let first = location.hash.slice(1);
+if (!TABS.includes(first)) { try { first = localStorage.getItem(KEY + "-tab") || "drive"; } catch (e) { first = "drive"; } }
+showTab(first, false);
+let rz, lastW = 0;
+if ("ResizeObserver" in window) new ResizeObserver(es => { const w = Math.round(es[0].contentRect.width); if (w === lastW) return; lastW = w; cancelAnimationFrame(rz); rz = requestAnimationFrame(renderCharts); }).observe($("main"));
+</script>
+
+</body></html>
