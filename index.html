@@ -228,6 +228,7 @@ footer{font-size:12px;color:var(--muted);padding-block:8px 32px;border-top:1px s
   <button role="tab" id="t-shaft" data-tab="shaft" aria-controls="shaft" type="button"><span class="tl">轴强度</span><small>剪应力 · 轴径 · 选材</small></button>
   <button role="tab" id="t-battery" data-tab="battery" aria-controls="battery" type="button"><span class="tl">电池 · 续航</span><small>电流余量 · 续航</small></button>
   <button role="tab" id="t-chassis" data-tab="chassis" aria-controls="chassis" type="button"><span class="tl">车身 · 重心</span><small>轴荷 · 侧翻</small></button>
+  <button role="tab" id="t-steer" data-tab="steer" aria-controls="steer" type="button"><span class="tl">转向 · 阿克曼</span><small>内外轮转角 · 转弯半径</small></button>
   <span class="sep" aria-hidden="true"></span>
   <button role="tab" id="t-summary" data-tab="summary" aria-controls="summary" type="button"><span class="tl">总结 · BOM</span><small>参数、选材与校核汇总</small></button>
 </nav>
@@ -304,6 +305,17 @@ footer{font-size:12px;color:var(--muted);padding-block:8px 32px;border-top:1px s
   </div>
 </section>
 
+<section id="steer" class="tab" role="tabpanel" aria-labelledby="t-steer" hidden>
+  <div class="blk"><h2>阿克曼转向<span>梯形转向机构，拉杆在前轴后方</span></h2>
+    <div class="inputs" data-block="steer"></div>
+    <div class="results">
+      <div class="tiles" id="st-tiles"></div>
+      <div class="card"><h4>俯视示意（向左转）</h4><p class="sub" id="st-sub"></p><figure id="st-fig"></figure></div>
+      <div class="card"><h4>各转角下的外侧轮转角</h4><p class="sub">理想值按阿克曼条件 cot δo − cot δi = 主销间距 / 轴距；实际值按转向臂 + 拉杆几何求解</p><div class="scroll" id="st-table"></div><div id="st-warn"></div></div>
+    </div>
+  </div>
+</section>
+
 <section id="summary" class="tab" role="tabpanel" aria-labelledby="t-summary" hidden>
   <div class="sumhead"><h2>方案总结</h2><p>数值实时取自前面各页，改任何参数这里都会跟着变</p></div>
   <div class="tiles" id="sum-tiles"></div>
@@ -317,7 +329,7 @@ footer{font-size:12px;color:var(--muted);padding-block:8px 32px;border-top:1px s
 </div>
 
 <footer class="wrap">
-  <p>由 rc_calc.py 移植。车速 = KV × 电压 × 带载系数 ÷ FDR × π × 轮径；扭矩常数 Kt = 60 / (2π·KV)；齿轮弯曲应力按 Lewis 公式 σ = K·Ft / (b·m·Y)；轴扭转剪应力 τ = 16T·D / π(D⁴ − d⁴)，许用剪应力取 0.5σs。参数会保存在当前浏览器里。</p>
+  <p>由 rc_calc.py 移植。车速 = KV × 电压 × 带载系数 ÷ FDR × π × 轮径；扭矩常数 Kt = 60 / (2π·KV)；齿轮弯曲应力按 Lewis 公式 σ = K·Ft / (b·m·Y)；轴扭转剪应力 τ = 16T·D / π(D⁴ − d⁴)，许用剪应力取 0.5σs；阿克曼条件 cot δo − cot δi = 主销间距 / 轴距。参数会保存在当前浏览器里。</p>
 </footer>
 <div class="toast" id="toast" role="status" hidden></div>
 <script>
@@ -372,6 +384,29 @@ const C = {
   runtime: (cap, i, u = 0.8) => cap / 1000 * u / i * 60,
   maxCur: (cap, c) => cap / 1000 * c,
   cg: (f, r, wb) => r * wb / (f + r),
+  /* 阿克曼：L 轴距，kp 主销间距，角度单位 ° */
+  ackOuter: (di, L, kp) => Math.atan(1 / (1 / Math.tan(di * RAD) + kp / L)) / RAD,
+  ackBeta: (L, kp) => Math.atan(kp / 2 / L) / RAD,
+  /* 梯形机构实际外侧轮转角：转向臂长 ra、内倾角 beta，拉杆在前轴后方 */
+  linkOuter(di, kp, ra, beta) {
+    const k = kp / 2, b = beta * RAD, T0 = kp - 2 * ra * Math.sin(b);
+    if (!(T0 > 0)) return NaN;
+    const fL = (-Math.PI / 2 + b + di * RAD), PL = [-k + ra * Math.cos(fL), ra * Math.sin(fL)];
+    const f = d => { const a = -Math.PI / 2 - b + d * RAD; return Math.hypot(k + ra * Math.cos(a) - PL[0], ra * Math.sin(a) - PL[1]) - T0; };
+    let lo = di - 60, hi = di + 60, flo = f(lo);
+    if (flo * f(hi) > 0) return NaN;
+    for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2, fm = f(m); if (flo * fm <= 0) hi = m; else { lo = m; flo = fm; } }
+    return (lo + hi) / 2;
+  },
+  /* 在最大转角 di 处达到 100% 阿克曼所需的转向臂内倾角（二分法） */
+  beta100(di, L, kp, ra) {
+    const ideal = C.ackOuter(di, L, kp), g = b => C.linkOuter(di, kp, ra, b) - ideal;
+    let lo = NaN, hi = NaN;
+    for (let b = 0; b < 75; b += 0.5) { const a = g(b), c = g(b + 0.5); if (a > 0 && c <= 0) { lo = b; hi = b + 0.5; break; } }
+    if (!Number.isFinite(lo)) return NaN;
+    for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2, gm = g(m); if (gm > 0) lo = m; else hi = m; }
+    return (lo + hi) / 2;
+  },
   rollG: (tw, h) => tw / (2 * h),
 };
 
@@ -381,6 +416,7 @@ const DEF = { kv: 3300, cells: 2, vmode: "n", volt: 7.4, lf: 0.85, pinion: 18, s
   gunit: "m", gm: 1, gdp: 48, z1: 13, z2: 37, cm: 0.6, ca: 26, pmin: 12, pmax: 30, smin: 50, smax: 100, tol: 0.1,
   lt: 0.5, lm: 1, lz: 13, lb: 6, lk: 2, st: 1, swheels: 4, simpact: 2, sd: 5, si: 0, ssf: 2, sl: 100,
   cap: 5000, crate: 50, avg: 20, cf: 1, cr: 1.1, wb: 260, tw: 190, ch: 40,
+  kp: 160, sdi: 25, sra: 20, sbeta: 15,
   lobj: "pin", mpin: "铅黄铜 HPb59-1 / C3604", mspur: "POM 赛钢", mshaft: "45# 钢（调质）" };
 const KEY = "rc-calc-v1";
 let S = Object.assign({}, DEF), D = {};
@@ -464,6 +500,16 @@ const BLOCKS = {
     { k: "wb", l: "轴距", u: "mm", step: 1 },
     { k: "tw", l: "轮距", u: "mm", step: 1 },
     { k: "ch", l: "重心高度", u: "mm", min: 10, max: 150, step: 1, sl: 1 }] }],
+  steer: [
+    { t: "车身尺寸", f: [
+      { k: "wb", l: "轴距", u: "mm", step: 1, h: "与「车身 · 重心」页共用" },
+      { k: "kp", l: "主销间距", u: "mm", step: 1, h: "左右转向节转向轴之间的距离，比轮距小" },
+      { k: "tw", l: "轮距", u: "mm", step: 1, h: "轮胎中心距，用来算外轮转弯直径" }] },
+    { t: "转向连杆", f: [
+      { k: "sdi", l: "内侧轮最大转角 δi", u: "°", min: 5, max: 45, step: 0.5, sl: 1 },
+      { k: "sra", l: "转向臂长", u: "mm", step: 0.5, h: "主销到拉杆球头的距离" },
+      { k: "sbeta", l: "转向臂内倾角 β", u: "°", min: 0, max: 45, step: 0.5, sl: 1, zero: 1, pull: [["100% 所需角", "beta100"], ["经验角", "betaIdeal"]],
+        h: "转向臂相对车身纵向向内倾斜的角度。0 = 平行转向。经验角 = 臂延长线交在后轴中心（传统画法，实际达不到 100%）" }] }],
 };
 
 /* ========== 控件生成 ========== */
@@ -583,7 +629,8 @@ function derive() {
     vmax0: C.topSpeed(S.kv, v, fdr, S.tire), vmax: C.topSpeed(S.kv, v, fdr, S.tire, S.lf),
     tm, tw, F, aRaw, aLim, a, tAcc: S.accTo / 3.6 / a, gripF: S.mu * S.mass * G,
     needFdr, needP: S.spur * S.internal / needFdr,
-    pinionT: tm, spurT: tm * S.spur / S.pinion, axleT: tw / S.swheels * S.simpact };
+    pinionT: tm, spurT: tm * S.spur / S.pinion, axleT: tw / S.swheels * S.simpact,
+    betaIdeal: C.ackBeta(S.wb, S.kp), beta100: C.beta100(S.sdi, S.wb, S.kp, S.sra) };
 }
 
 /* ========== 通用小部件 ========== */
@@ -966,8 +1013,84 @@ function renderChassis() {
   if (ok && Number.isFinite(x) && Number.isFinite(g)) { drawSide(x); drawFront(g); }
 }
 
+/* ========== 转向 · 阿克曼 ========== */
+function steerCalc(di) {
+  const ideal = C.ackOuter(di, S.wb, S.kp), act = C.linkOuter(di, S.kp, S.sra, S.sbeta);
+  return { di, ideal, act, pct: (di - act) / (di - ideal) * 100 };
+}
+function drawSteer(r) {
+  const L = S.wb, k = S.kp / 2, di = r.di * RAD, Rc = L / Math.tan(di) + k;   // 转向中心在 (-Rc, -L)
+  const showC = Rc < 3.2 * L, tl = Math.max(S.tire * 0.9, 30), tw2 = Math.max(S.tire * 0.35, 12), off = (S.tw - S.kp) / 2;
+  const xmin = showC ? -Rc - 30 : -k - off - tl - 40, xmax = k + off + tl + 30, ymin = -L - 50, ymax = tl + 40;
+  const W = xmax - xmin, H = ymax - ymin, fs = Math.max(W, H) / 46, sw = Math.max(W, H) / 420;
+  const X = x => (x - xmin).toFixed(2), Y = y => (ymax - y).toFixed(2);
+  const wheel = (cx, cy, ang, cls) => { const a = ang * RAD, dx = Math.sin(a) * tl / 2, dy = Math.cos(a) * tl / 2, nx = Math.cos(a) * tw2 / 2, ny = -Math.sin(a) * tw2 / 2;
+    const p = [[cx - dx + nx, cy + dy + ny], [cx - dx - nx, cy + dy - ny], [cx + dx - nx, cy - dy - ny], [cx + dx + nx, cy - dy + ny]];
+    return `<polygon points="${p.map(([x, y]) => X(x) + "," + Y(y)).join(" ")}" fill="var(--sunk)" stroke="currentColor" stroke-width="${sw * 1.6}" ${cls || ""}/>`; };
+  // 车轮转角为逆时针（左转）。车轮中心在主销外侧 off 处
+  const wc = (side, ang) => { const a = ang * RAD; return [side * k + side * off * Math.cos(a), side * off * Math.sin(a)]; };
+  const [lx, ly] = wc(-1, r.di), [rx, ry] = wc(1, Number.isFinite(r.act) ? r.act : r.ideal);
+  let s = `<svg viewBox="0 0 ${W.toFixed(1)} ${H.toFixed(1)}" role="img" aria-label="俯视：内侧轮 ${fmt(r.di, 1)}°，理想外侧轮 ${fmt(r.ideal, 1)}°，实际外侧轮 ${fmt(r.act, 1)}°">`;
+  // 车架、前后轴
+  s += `<path d="M${X(-k)},${Y(0)}H${X(k)}M${X(-k)},${Y(-L)}H${X(k)}M${X(0)},${Y(0)}V${Y(-L)}" fill="none" stroke="currentColor" stroke-width="${sw * 1.5}"/>`;
+  s += wheel(-k - off, -L, 0) + wheel(k + off, -L, 0);
+  // 车轮轴线延长线
+  const axisLine = (px, py, ang, col, dash) => { const a = ang * RAD, len = Math.hypot(W, H) * 1.5;
+    return `<line x1="${X(px)}" y1="${Y(py)}" x2="${X(px - Math.cos(a) * len)}" y2="${Y(py - Math.sin(a) * len)}" stroke="${col}" stroke-width="${sw}" ${dash ? `stroke-dasharray="${sw * 5} ${sw * 3}"` : ""}/>`; };
+  s += `<line x1="${X(xmin)}" y1="${Y(-L)}" x2="${X(xmax)}" y2="${Y(-L)}" stroke="var(--ink-2)" stroke-width="${sw}" stroke-dasharray="${sw * 5} ${sw * 3}"/>`;
+  s += axisLine(-k, 0, r.di, "var(--ink-2)", 1) + axisLine(k, 0, r.ideal, "var(--good)", 1);
+  if (Number.isFinite(r.act)) s += axisLine(k, 0, r.act, "var(--accent)", 0);
+  // 转向臂与拉杆
+  const b = S.sbeta * RAD, arm = (side, ang) => { const a = (-Math.PI / 2 + (side < 0 ? b : -b)) + ang * RAD; return [side * k + S.sra * Math.cos(a), S.sra * Math.sin(a)]; };
+  if (Number.isFinite(r.act)) {
+    const pl = arm(-1, r.di), pr = arm(1, r.act);
+    s += `<path d="M${X(-k)},${Y(0)}L${X(pl[0])},${Y(pl[1])}L${X(pr[0])},${Y(pr[1])}L${X(k)},${Y(0)}" fill="none" stroke="var(--accent)" stroke-width="${sw * 2.2}" stroke-linejoin="round"/>`;
+  }
+  s += wheel(lx, ly, r.di) + wheel(rx, ry, Number.isFinite(r.act) ? r.act : r.ideal);
+  for (const x of [-k, k]) s += `<circle cx="${X(x)}" cy="${Y(0)}" r="${sw * 3}" fill="currentColor"/>`;
+  if (showC) s += `<circle cx="${X(-Rc)}" cy="${Y(-L)}" r="${sw * 4}" fill="var(--good)"/><text x="${X(-Rc)}" y="${Y(-L) - fs * 0.8}" font-size="${fs}" fill="var(--ink)">理想转向中心</text>`;
+  s += `<text x="${X(0)}" y="${Y(tl / 2 + 10)}" text-anchor="middle" font-size="${fs}" fill="var(--muted)">车头 ↑</text>`;
+  s += `<text x="${X(-k)}" y="${Y(-tl * 0.7)}" text-anchor="middle" font-size="${fs}" fill="var(--ink)" font-family="var(--f-mono)">${fmt(r.di, 1)}°</text>`;
+  s += `<text x="${X(k)}" y="${Y(-tl * 0.7)}" text-anchor="middle" font-size="${fs}" fill="var(--ink)" font-family="var(--f-mono)">${fmt(r.act, 1)}°</text></svg>`;
+  $("#st-fig").innerHTML = s;
+  $("#st-fig").append(el("figcaption", null, showC
+    ? "灰虚线 = 后轴延长线与内侧轮轴线，绿虚线 = 理想外侧轮轴线，蓝实线 = 实际外侧轮轴线和转向臂 / 拉杆。三线交在一点就是 100% 阿克曼。"
+    : `转向中心在车身左侧约 ${fmt(Rc, 0)} mm 处，超出画面。转角加大后可以看到。`));
+}
+function renderSteer() {
+  const r = steerCalc(S.sdi), L = S.wb, k = S.kp / 2, Rc = L / Math.tan(S.sdi * RAD) + k;
+  const T0 = S.kp - 2 * S.sra * Math.sin(S.sbeta * RAD), Rout = L / Math.sin(r.ideal * RAD) + (S.tw - S.kp) / 2;
+  const pk = !Number.isFinite(r.pct) ? null : r.pct >= 80 && r.pct <= 110 ? "good" : r.pct >= 40 ? "warn" : "bad";
+  tiles($("#st-tiles"), [
+    { k: "理想外侧轮转角", v: fmt(r.ideal, 2), u: "°", s: `内侧 ${fmtIn(S.sdi)}° 时，差 ${fmt(S.sdi - r.ideal, 2)}°` },
+    { k: "实际外侧轮转角", v: fmt(r.act, 2), u: "°", s: `转向臂 ${fmtIn(S.sra)} mm，内倾 ${fmtIn(S.sbeta)}°，拉杆 ${fmt(T0, 1)} mm` },
+    { k: "阿克曼百分比", v: fmt(r.pct, 0), u: "%", key: 1, s: "100% = 理想，0% = 平行转向，负值 = 反阿克曼",
+      pill: pk && pill(pk, { good: "接近理想", warn: "部分阿克曼", bad: "接近平行 / 反阿克曼" }[pk]) },
+    { k: "100% 阿克曼所需内倾角", v: fmt(D.beta100, 2), u: "°", s: `在最大转角 ${fmtIn(S.sdi)}° 处精确满足；经验角（臂交后轴中心）${fmt(D.betaIdeal, 2)}°，实际只能达到 ${fmt((() => { const a = C.linkOuter(S.sdi, S.kp, S.sra, D.betaIdeal); return (S.sdi - a) / (S.sdi - C.ackOuter(S.sdi, S.wb, S.kp)) * 100; })(), 0)}%` },
+    { k: "转弯半径（后轴中心）", v: fmt(Rc, 0), u: "mm", s: `R = 轴距 / tan δi + 主销间距 / 2` },
+    { k: "最小转弯直径（外前轮）", v: fmt(2 * Rout / 1000, 2), u: "m", s: "按理想几何、不打滑估算" },
+  ]);
+  $("#st-sub").textContent = `内侧轮（左）${fmt(r.di, 1)}°，实际外侧轮（右）${fmt(r.act, 1)}°，理想 ${fmt(r.ideal, 1)}°`;
+  const t = el("table", "data"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+  for (const h of ["内侧轮 δi", "理想外侧 δo", "实际外侧 δo", "偏差", "阿克曼 %"]) hr.append(el("th", null, h));
+  const steps = []; for (let a = 5; a < S.sdi - 1e-9; a += 5) steps.push(a); steps.push(S.sdi);
+  for (const a of steps) {
+    const x = steerCalc(a), tr = tb.insertRow(); if (a === S.sdi) tr.className = "on";
+    tr.append(el("td", null, fmt(a, 1) + "°"), el("td", null, fmt(x.ideal, 2) + "°"), el("td", null, fmt(x.act, 2) + "°"),
+      el("td", null, (x.act - x.ideal >= 0 ? "+" : "") + fmt(x.act - x.ideal, 2) + "°"), el("td", null, fmt(x.pct, 0)));
+  }
+  $("#st-table").replaceChildren(t);
+  const w = $("#st-warn"); w.replaceChildren();
+  const warn = (k, msg) => { const d = el("div", "warnline"); d.append(pill(k, k === "bad" ? "无解" : "注意"), el("span", null, msg)); w.append(d); };
+  if (!(T0 > 0)) warn("bad", "转向臂太长或内倾角太大：拉杆长度 ≤ 0，请减小转向臂长或内倾角。");
+  else if (!Number.isFinite(r.act)) warn("bad", "连杆在这个转角下无法到达（死点），请减小最大转角或调整转向臂。");
+  if (S.kp >= S.tw) warn("warn", "主销间距一般小于轮距，请检查输入。");
+  if (S.sdi > 35) warn("warn", "转角较大时梯形机构误差变大，RC 车常用 25°–35°。");
+  drawSteer(r);
+}
+
 /* ========== 总结 · BOM ========== */
-const TABNAME = { drive: "动力 · 齿比", gear: "齿轮设计", shaft: "轴强度", battery: "电池 · 续航", chassis: "车身 · 重心" };
+const TABNAME = { drive: "动力 · 齿比", gear: "齿轮设计", shaft: "轴强度", battery: "电池 · 续航", chassis: "车身 · 重心", steer: "转向 · 阿克曼" };
 const PICKNAME = { mpin: "马达齿材料", mspur: "主齿材料", mshaft: "轴材料" };
 let BOM_TSV = "";
 function gearCheck(obj, mat) {
@@ -995,6 +1118,7 @@ function renderSummary() {
       { kind: d.aRaw > d.aLim ? "warn" : "good", text: d.aRaw > d.aLim ? "推力超抓地，会打滑" : "推力未超抓地", note: `推力 ${fmt(d.F, 1)} N，抓地上限 ${fmt(d.gripF, 1)} N` }, "drive"],
     ["整车", `${fmt(tot, 2)} kg · 前/后轴荷 ${fmt(S.cf / tot * 100, 1)} / ${fmt(S.cr / tot * 100, 1)} % · 轴距 ${fmtIn(S.wb)} · 轮距 ${fmtIn(S.tw)} · 重心高 ${fmtIn(S.ch)} mm`, "—", "—",
       { kind: S.mu < rg ? "good" : "bad", text: S.mu < rg ? "先侧滑，不会侧翻" : "急弯可能侧翻", note: `侧翻临界 ${fmt(rg, 2)} g，μ ${fmtIn(S.mu)}` }, "chassis"],
+    ["转向机构", (() => { const r = steerCalc(S.sdi); return `主销间距 ${fmtIn(S.kp)} mm · 转向臂 ${fmtIn(S.sra)} mm · 内倾 ${fmtIn(S.sbeta)}° · 最大转角 内 ${fmtIn(S.sdi)}° / 外 ${fmt(r.act, 1)}° · 阿克曼 ${fmt(r.pct, 0)}%`; })(), "—", "1", null, "steer"],
   ];
   const t = el("table", "data bom"), hr = t.createTHead().insertRow(), tb = t.createTBody();
   for (const h of ["序号", "部件", "规格 / 参数", "材料", "数量", "校核", "来源"]) hr.append(el("th", null, h));
@@ -1021,11 +1145,11 @@ function renderSummary() {
 }
 
 /* ========== 刷新 ========== */
-const TABS = ["drive", "gear", "shaft", "battery", "chassis", "summary"];
+const TABS = ["drive", "gear", "shaft", "battery", "chassis", "steer", "summary"];
 let TAB = "drive";
 function renderCharts() { if (TAB === "drive") renderDriveCharts(); }
 function render() {
-  renderDrive(); renderGeom(); renderCombo(); renderLewis(); renderShaft(); renderBatt(); renderChassis(); renderSummary();
+  renderDrive(); renderGeom(); renderCombo(); renderLewis(); renderShaft(); renderBatt(); renderChassis(); renderSteer(); renderSummary();
   renderCharts();
 }
 function update() { D = derive(); render(); sync(); save(); }

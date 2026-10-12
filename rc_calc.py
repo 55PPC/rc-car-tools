@@ -285,6 +285,74 @@ def rollover_lateral_g(track_width_mm, cg_height_mm):
     return track_width_mm / (2.0 * cg_height_mm)
 
 
+
+# ---------------------------------------------------------------------------
+# 8. 阿克曼转向（梯形机构，拉杆在前轴后方，角度单位 °）
+# ---------------------------------------------------------------------------
+
+def ackermann_outer(inner_deg, wheelbase_mm, kingpin_mm):
+    """理想外侧轮转角：cot δo − cot δi = 主销间距 / 轴距"""
+    return math.degrees(math.atan(1.0 / (1.0 / math.tan(math.radians(inner_deg)) + kingpin_mm / wheelbase_mm)))
+
+
+def ackermann_beta_rule(wheelbase_mm, kingpin_mm):
+    """经验内倾角：转向臂延长线交在后轴中心（传统画法，实际达不到 100%）"""
+    return math.degrees(math.atan(kingpin_mm / 2.0 / wheelbase_mm))
+
+
+def linkage_outer(inner_deg, kingpin_mm, arm_mm, beta_deg):
+    """按转向臂 + 拉杆几何求实际外侧轮转角；无解返回 nan"""
+    k, b = kingpin_mm / 2.0, math.radians(beta_deg)
+    t0 = kingpin_mm - 2 * arm_mm * math.sin(b)
+    if t0 <= 0:
+        return float("nan")
+    fl = -math.pi / 2 + b + math.radians(inner_deg)
+    pl = (-k + arm_mm * math.cos(fl), arm_mm * math.sin(fl))
+
+    def f(d):
+        a = -math.pi / 2 - b + math.radians(d)
+        return math.hypot(k + arm_mm * math.cos(a) - pl[0], arm_mm * math.sin(a) - pl[1]) - t0
+
+    lo, hi = inner_deg - 60, inner_deg + 60
+    if f(lo) * f(hi) > 0:
+        return float("nan")
+    for _ in range(60):
+        m = (lo + hi) / 2
+        if f(lo) * f(m) <= 0:
+            hi = m
+        else:
+            lo = m
+    return (lo + hi) / 2
+
+
+def ackermann_percent(inner_deg, actual_outer, ideal_outer):
+    """100% = 理想，0% = 平行转向，负值 = 反阿克曼"""
+    return (inner_deg - actual_outer) / (inner_deg - ideal_outer) * 100
+
+
+def ackermann_beta_100(inner_deg, wheelbase_mm, kingpin_mm, arm_mm):
+    """在最大转角处达到 100% 阿克曼所需的转向臂内倾角"""
+    ideal = ackermann_outer(inner_deg, wheelbase_mm, kingpin_mm)
+    g = lambda b: linkage_outer(inner_deg, kingpin_mm, arm_mm, b) - ideal
+    b = 0.0
+    while b < 75:
+        if g(b) > 0 and g(b + 0.5) <= 0:
+            lo, hi = b, b + 0.5
+            for _ in range(40):
+                m = (lo + hi) / 2
+                if g(m) > 0:
+                    lo = m
+                else:
+                    hi = m
+            return (lo + hi) / 2
+        b += 0.5
+    return float("nan")
+
+
+def turning_radius_mm(inner_deg, wheelbase_mm, kingpin_mm):
+    """后轴中心转弯半径 R = 轴距 / tan δi + 主销间距 / 2"""
+    return wheelbase_mm / math.tan(math.radians(inner_deg)) + kingpin_mm / 2.0
+
 # ===========================================================================
 # 交互菜单
 # ===========================================================================
@@ -481,6 +549,34 @@ def menu_chassis():
           "（大于轮胎 μ 则先侧滑而不翻）")
 
 
+def menu_ackermann():
+    print("\n【阿克曼转向】（梯形机构，拉杆在前轴后方）")
+    L = ask("轴距 mm", 260)
+    kp = ask("主销间距 mm", 160)
+    tw = ask("轮距 mm", 190)
+    di = ask("内侧轮最大转角 °", 25)
+    ra = ask("转向臂长 mm", 20)
+    beta = ask("转向臂内倾角 β °（0 = 平行转向）", 15)
+    ideal = ackermann_outer(di, L, kp)
+    act = linkage_outer(di, kp, ra, beta)
+    print(f"\n  理想外侧轮转角 = {ideal:.2f}°")
+    if math.isnan(act):
+        print("  ⚠ 连杆无解：转向臂太长 / 内倾角太大，或该转角处于死点")
+    else:
+        print(f"  实际外侧轮转角 = {act:.2f}°，阿克曼 {ackermann_percent(di, act, ideal):.0f}%")
+    print(f"  100% 阿克曼所需内倾角 = {ackermann_beta_100(di, L, kp, ra):.2f}°"
+          f"（经验角 {ackermann_beta_rule(L, kp):.2f}°，实际达不到 100%）")
+    R = turning_radius_mm(di, L, kp)
+    rout = L / math.sin(math.radians(ideal)) + (tw - kp) / 2
+    print(f"  转弯半径（后轴中心）= {R:.0f} mm，最小转弯直径（外前轮）≈ {2 * rout / 1000:.2f} m")
+    print("\n  δi    理想δo   实际δo   阿克曼%")
+    a = 5.0
+    while a <= di + 1e-9:
+        i, x = ackermann_outer(a, L, kp), linkage_outer(a, kp, ra, beta)
+        print(f"  {a:4.1f}  {i:7.2f}  {x:7.2f}  {ackermann_percent(a, x, i):6.0f}")
+        a += 5.0
+
+
 MENU = [
     ("齿比 / 总减速比 / Rollout", menu_ratio),
     ("理论车速（KV、电压、齿比、轮径）", menu_speed),
@@ -492,6 +588,7 @@ MENU = [
     ("轴强度 / 最小轴径 / 扭转角", menu_shaft),
     ("电池 / 功率 / 续航", menu_battery),
     ("车身：轴荷 / 重心 / 侧翻", menu_chassis),
+    ("阿克曼转向：内外轮转角 / 转向臂内倾角", menu_ackermann),
 ]
 
 
@@ -514,6 +611,9 @@ def demo():
     print(f"45#钢 1N·m SF2 最小轴径 = {shaft_min_diameter(1.0, 355, 2):.2f} mm")
     print(f"0.6模数 中心距26mm 组合: {pinion_spur_combos(0.6, 26, (12, 30), (50, 100), 0.1)[:3]}")
     print(f"5000mAh 20A 续航 = {run_time_min(5000, 20):.1f} min")
+    io, ao = ackermann_outer(25, 260, 160), linkage_outer(25, 160, 20, 15)
+    print(f"阿克曼 L260 主销160 臂20 β15° δi25°: 理想外 {io:.2f}°, 实际外 {ao:.2f}°, "
+          f"{ackermann_percent(25, ao, io):.0f}%, 100%所需β {ackermann_beta_100(25, 260, 160, 20):.2f}°")
 
 
 def main():
