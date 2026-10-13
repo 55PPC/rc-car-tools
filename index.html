@@ -229,6 +229,28 @@ table.cmp tr.grp td{background:var(--sunk);font-size:12px;font-weight:600;color:
 table.cmp tr.diff td.b{font-weight:600;color:var(--ink)}
 table.cmp td.up{color:var(--good-ink)} table.cmp td.dn{color:var(--bad-ink)} table.cmp td.ne{color:var(--muted)}
 .empty{color:var(--muted);font-size:13px;padding:10px 0}
+table.edit td{padding:4px 6px}
+table.edit input,table.edit select{font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--line-2);border-radius:6px;background:var(--panel);color:var(--ink);width:100%;min-width:0}
+table.edit input.n{text-align:right;font-family:var(--f-mono);width:5.5em}
+table.edit input.t{min-width:9em}
+table.edit td.c{text-align:center}
+.gate{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:10px 14px;margin-bottom:10px}
+.gate h4{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 6px;font-size:14px}
+.gate h4 small{font-weight:500;color:var(--muted);font-size:12px}
+.ck-row{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,14em) 9.5em;gap:8px;align-items:center;padding:5px 0;border-top:1px solid var(--line);font-size:13px}
+.ck-row:first-of-type{border-top:0}
+.ck-row > span:last-child{text-align:right}
+.ck-row input[type=text]{font:inherit;font-size:12px;padding:3px 6px;border:1px solid var(--line-2);border-radius:6px;background:var(--panel);color:var(--ink);width:100%}
+.ck-row.done > span{color:var(--muted);text-decoration:line-through}
+@media (max-width:640px){.ck-row{grid-template-columns:auto minmax(0,1fr) auto}.ck-row input[type=text]{grid-column:2/-1}}
+.prog{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;margin-top:4px}
+.prog i{display:block;height:100%;background:var(--good)}
+.pfilters{display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+@media (max-width:760px){.pfilters{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.pfilters input,.pfilters select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--line-2);border-radius:6px;background:var(--panel);color:var(--ink);min-width:0}
+table.parts td{white-space:normal;vertical-align:top}
+table.parts td.fl .pill{display:inline-block;margin:0 4px 4px 0;white-space:normal;text-align:left}
+table.parts select{font:inherit;font-size:12px;padding:2px 4px;border:1px solid var(--line-2);border-radius:6px;background:var(--panel);color:var(--ink)}
 .tgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 10px;padding-block:8px}
 .tgrid label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-2);min-width:0}
 .tgrid label.w2{grid-column:1/-1}
@@ -263,11 +285,16 @@ table.data tr.sub td{color:var(--muted);font-size:12px}
   <button role="tab" id="t-gear" data-tab="gear" aria-controls="gear" type="button"><span class="tl">齿轮设计</span><small>几何 · 齿数组合 · 强度选材</small></button>
   <button role="tab" id="t-shaft" data-tab="shaft" aria-controls="shaft" type="button"><span class="tl">轴强度</span><small>剪应力 · 轴径 · 选材</small></button>
   <button role="tab" id="t-torque" data-tab="torque" aria-controls="torque" type="button"><span class="tl">转矩流 · 载荷</span><small>名义 / 峰值 · 逐件安全系数</small></button>
+  <button role="tab" id="t-conn" data-tab="conn" aria-controls="conn" type="button"><span class="tl">轮端 · 连接</span><small>横销 · 螺纹 · 轴承寿命</small></button>
   <button role="tab" id="t-battery" data-tab="battery" aria-controls="battery" type="button"><span class="tl">电池 · 续航</span><small>电流余量 · 续航</small></button>
   <button role="tab" id="t-chassis" data-tab="chassis" aria-controls="chassis" type="button"><span class="tl">车身 · 重心</span><small>轴荷 · 侧翻</small></button>
+  <button role="tab" id="t-mass" data-tab="mass" aria-controls="mass" type="button"><span class="tl">质量预算</span><small>零件质量 · 簧下 · 重心</small></button>
+  <button role="tab" id="t-susp" data-tab="susp" aria-controls="susp" type="button"><span class="tl">悬架 · 弹簧</span><small>频率 · 刚度 · 并圈 · 阻尼</small></button>
   <button role="tab" id="t-steer" data-tab="steer" aria-controls="steer" type="button"><span class="tl">转向 · 阿克曼</span><small>内外轮转角 · 转弯半径</small></button>
   <span class="sep" aria-hidden="true"></span>
   <button role="tab" id="t-goals" data-tab="goals" aria-controls="goals" type="button"><span class="tl">目标 · 验证</span><small>达标看板 · 实测记录</small></button>
+  <button role="tab" id="t-review" data-tab="review" aria-controls="review" type="button"><span class="tl">评审 · 节点</span><small>G0–G7 · 红线问题</small></button>
+  <button role="tab" id="t-parts" data-tab="parts" aria-controls="parts" type="button"><span class="tl">零件库 · BOM 核查</span><small>历史零件参考 · 材料核查</small></button>
   <button role="tab" id="t-garage" data-tab="garage" aria-controls="garage" type="button"><span class="tl">车型存档 · 对比</span><small>保存参数 · 两车对比</small></button>
   <span class="sep" aria-hidden="true"></span>
   <button role="tab" id="t-summary" data-tab="summary" aria-controls="summary" type="button"><span class="tl">总结 · BOM</span><small>参数、选材与校核汇总</small></button>
@@ -307,6 +334,15 @@ table.data tr.sub td{color:var(--muted);font-size:12px}
     <div class="inputs" data-block="combo"></div>
     <div class="results"><div class="card" id="combo-out"></div></div>
   </div>
+  <div class="blk"><h2>多级减速 · 伞齿 · 接触强度<span>差速器 / 变速箱内部减速链，逐级校核弯曲与齿面接触</span></h2>
+    <div class="inputs" data-block="chain"></div>
+    <div class="results">
+      <div class="tiles" id="ch-tiles"></div>
+      <div class="card"><div class="row-flex between"><h4>逐级校核</h4><button class="mini" id="ch-apply" type="button">把总减速比带入「内部减速比」</button></div>
+        <p class="sub" id="ch-sub"></p><div class="scroll" id="ch-table"></div>
+        <p class="note">弯曲：σF = K · Ft / (b · m · Y)，SF = 材料强度 ÷ σF。接触：σH = ZE · ZH · √(K · Ft / (b · d₁) · (u + 1) / u)，ZH = 2.5（20° 标准齿），ZE 由两齿轮弹性模量算出；SF = 许用接触应力 ÷ σH。伞齿按背锥当量直齿处理：中点模数 mm = m(1 − 0.5b/R)，当量齿数 zv = z / cos δ，当量齿数比 uv = u²。逐级转矩按无损传递（偏保守）。这是初步校核，不能替代 ISO 6336 / AGMA 的完整计算。</p></div>
+    </div>
+  </div>
   <div class="blk"><h2>齿轮弯曲强度<span>Lewis 公式初步校核</span></h2>
     <div class="inputs" data-block="lewis"></div>
     <div class="results">
@@ -336,9 +372,31 @@ table.data tr.sub td{color:var(--muted);font-size:12px}
         <p class="note">名义 = 工作电流下的电机扭矩；电机峰值 = 峰值 / 堵转电流下的扭矩；抓地上限 = 轮胎打滑前地面能反传回来的最大扭矩（静态轴荷，未计加速载荷转移）；设计峰值按左侧「设计峰值取法」。转矩按无损传递计算（偏保守），差速器按开放式、前后扭矩按固定比例分配。名义 SF 不含冲击；设计 SF = 设计峰值 × 冲击系数（齿轮用「齿轮设计」页的动载系数 K，轴用「轴强度」页的冲击系数）。齿轮按 Lewis 弯曲强度，轴按扭转剪应力（许用 0.5σs）。</p></div>
     </div>
   </div>
+  <div class="blk"><h2>中轴转速 · 万向节<span>临界转速与十字万向节速度波动</span></h2>
+    <div class="inputs" data-block="cshaft"></div>
+    <div class="results"><div class="tiles" id="cs2-tiles"></div><div id="cs2-warn"></div></div>
+  </div>
   <div class="blk"><h2>材料库<span>强度数据的来源与性质</span></h2>
     <div class="inputs"><div class="group"><h3>说明</h3><div class="hint" style="padding-block:8px">「标准最低值」取自国标 / ISO 等标准规定的最低保证值，可直接用于校核；「典型值」是手册或厂商的常见值，同一牌号不同批次、状态差异大，正式定版前要换成供应商材料证明书上的数据。塑料无明显屈服点，取拉伸强度参考值，吸湿、温升后会明显下降。</div></div></div>
     <div class="results"><div class="card"><div class="scroll" id="mat-table"></div></div></div>
+  </div>
+</section>
+
+<section id="conn" class="tab" role="tabpanel" aria-labelledby="t-conn" hidden>
+  <div class="blk"><h2>横销 · 轮毂承压<span>六角轮座横销、狗骨销等十字销传扭</span></h2>
+    <div class="inputs" data-block="pin"></div>
+    <div class="results"><div class="tiles" id="pin-tiles"></div>
+      <div class="card"><p class="note" style="margin:0">销剪切按双剪：τ = 4T / (π · d² · D)，D 为轴径；许用剪应力取 0.5σs。轮毂槽承压：每侧受力 F = T / (2 · r)，p = F / (d · L)，与轮毂材料强度比较。横孔会削弱轴：孔处应力集中系数约 1.5–2，轴强度页的结果要按此打折。</p></div></div>
+  </div>
+  <div class="blk"><h2>螺纹预紧 · 拧紧扭矩<span>公制粗牙，按强度等级与预紧比例</span></h2>
+    <div class="inputs" data-block="thread"></div>
+    <div class="results"><div class="tiles" id="th-tiles"></div><div class="card"><h4>全部规格对照</h4><p class="sub" id="th-sub"></p><div class="scroll" id="th-table"></div>
+      <p class="note">拧紧扭矩 T = K · F · d，K 为扭矩系数（干燥钢件约 0.2，加螺纹胶或润滑约 0.15–0.18）。旋合长度经验：钢螺母 ≥ 0.8d；铝件攻丝 ≥ 1.5–2d；塑料件不宜直接攻丝反复拆装，建议用嵌件或自攻结构，且扭矩要按塑料能承受的值另定。</p></div></div>
+  </div>
+  <div class="blk"><h2>轴承寿命 L10<span>深沟球轴承，按当量动载荷估算</span></h2>
+    <div class="inputs" data-block="bearing"></div>
+    <div class="results"><div class="tiles" id="br-tiles"></div>
+      <div class="card"><p class="note" style="margin:0">L10 = (C / P)³ × 10⁶ 转，P = 载荷系数 × max(Fr, 0.56Fr + 1.6Fa)（深沟球轴承近似）。预设额定动载荷 C 参考 SKF 样本，不同品牌和密封形式差别很大，请按实际供应商样本填写。RC 车轴承多因进沙、进水和冲击压痕提前失效，计算寿命只代表干净润滑条件。</p></div></div>
   </div>
 </section>
 
@@ -360,6 +418,25 @@ table.data tr.sub td{color:var(--muted);font-size:12px}
   </div>
 </section>
 
+<section id="mass" class="tab" role="tabpanel" aria-labelledby="t-mass" hidden>
+  <div class="sumhead"><h2>质量预算</h2><p>逐件记录质量，汇总总重、簧下质量和重心；随车型存档。位置 = 零件重心到前轴的水平距离（mm，向后为正），留空则不参与重心计算。</p></div>
+  <div class="tiles" id="mb-tiles"></div>
+  <div class="card"><div class="row-flex between"><h4>零件质量表</h4><span class="row-flex"><button class="mini" id="mb-add" type="button">添加一行</button><button class="mini" id="mb-tpl" type="button">载入常用模板</button><button class="mini" id="mb-apply" type="button">用预算更新「车身」称重</button><button class="mini" id="mb-copy" type="button">复制表格</button></span></div>
+    <p class="sub">质量单位 g。勾选「簧下」的零件计入簧下质量（车轮、轮毂、转向节、约一半摆臂和避震）。</p><div class="scroll" id="mb-table"></div></div>
+  <div class="card" style="margin-top:14px"><h4>按系统汇总</h4><p class="sub" id="mb-sys-sub"></p><div class="scroll" id="mb-sys"></div></div>
+</section>
+
+<section id="susp" class="tab" role="tabpanel" aria-labelledby="t-susp" hidden>
+  <div class="blk"><h2>悬架弹簧<span>由目标车身频率反推弹簧刚度，再校核弹簧本身</span></h2>
+    <div class="inputs" data-block="susp"></div>
+    <div class="results">
+      <div class="tiles" id="sp-tiles"></div>
+      <div class="card"><h4>前后对照</h4><p class="sub">轴荷取自「车身 · 重心」页称重；运动比 MR = 避震行程 ÷ 车轮行程</p><div class="scroll" id="sp-table"></div><div id="sp-warn"></div>
+        <p class="note">目标轮端刚度 k轮 = m簧上 · (2πf)²；弹簧刚度 k = k轮 ÷ MR²；弹簧实际刚度 k = G·d⁴ / (8·D³·n)。剪应力按 Wahl 修正 τ = Kw · 8FD / (πd³)，许用取 0.45 Rm（静载，疲劳要更低）。实车 1/10 车身频率常见 3–6 Hz（全尺寸车 1–2 Hz 按比例放大）。阻尼按临界阻尼的比例给出建议值，实际要靠活塞孔径和油的黏度调出来。</p></div>
+    </div>
+  </div>
+</section>
+
 <section id="steer" class="tab" role="tabpanel" aria-labelledby="t-steer" hidden>
   <div class="blk"><h2>阿克曼转向<span>梯形转向机构，拉杆在前轴后方</span></h2>
     <div class="inputs" data-block="steer"></div>
@@ -368,6 +445,11 @@ table.data tr.sub td{color:var(--muted);font-size:12px}
       <div class="card"><h4>俯视示意（向左转）</h4><p class="sub" id="st-sub"></p><figure id="st-fig"></figure></div>
       <div class="card"><h4>各转角下的外侧轮转角</h4><p class="sub">理想值按阿克曼条件 cot δo − cot δi = 主销间距 / 轴距；实际值按转向臂 + 拉杆几何求解</p><div class="scroll" id="st-table"></div><div id="st-warn"></div></div>
     </div>
+  </div>
+  <div class="blk"><h2>舵机扭矩估算<span>原地转向（最恶劣的静摩擦工况）</span></h2>
+    <div class="inputs" data-block="servo"></div>
+    <div class="results"><div class="tiles" id="sv-tiles"></div>
+      <div class="card"><p class="note" style="margin:0">单轮原地转向阻力矩 M = μ · N · √(B²/8 + e²)（轮胎接地面绕主销扭转 + 主销偏距产生的力臂，常用经验式）。舵机扭矩 = 2M ÷ 转向臂长 × 舵机摆臂半径 × 余量。只算静态，行驶中的回正力矩一般更小，但颠簸、撞路肩的冲击可能更大，所以选型要留余量，并配合舵机保护器。</p></div></div>
   </div>
 </section>
 
@@ -405,6 +487,22 @@ table.data tr.sub td{color:var(--muted);font-size:12px}
       <div class="card"><h4>记录与理论对照</h4><p class="sub">偏差 = (实测 − 当时理论) ÷ 当时理论。实测带载系数 = 实测极速 ÷ 当时空载理论极速；反推平均电流 = 可用容量 ÷ 实测续航。</p><div class="scroll" id="ts-table"></div></div>
     </div>
   </div>
+</section>
+
+<section id="review" class="tab" role="tabpanel" aria-labelledby="t-review" hidden>
+  <div class="sumhead"><h2>评审 · 节点</h2><p>按「RC 通用设计大纲」第 17、18 节整理。逐项勾选并写备注，进度随车型存档。带按钮的项目可以直接跳到工具里对应的计算页。</p></div>
+  <div class="tiles" id="rv-tiles"></div>
+  <div id="rv-body"></div>
+</section>
+
+<section id="parts" class="tab" role="tabpanel" aria-labelledby="t-parts" hidden>
+  <div class="sumhead"><h2>零件库 · BOM 核查</h2><p>导入历史 BOM（.xlsx / .csv），按零件名称、车型、材质检索，自动提示可疑的材料写法，并逐条或按材料写法批量标记核查结果。旧 BOM 只作参考：未核查的数据不会进入任何计算，只有点「带入」才会把尺寸填进计算页。</p></div>
+  <div class="row-flex" style="margin:4px 0 12px"><button class="btn" id="pt-import" type="button">导入 BOM</button><button class="ghost" id="pt-export" type="button">导出核查结果 (.csv)</button><button class="ghost" id="pt-clear" type="button">清空零件库</button><input id="pt-file" type="file" accept=".xlsx,.xls,.csv,text/csv" hidden><span class="hint" id="pt-src"></span></div>
+  <div class="tiles" id="pt-tiles"></div>
+  <div class="card"><h4>材料写法汇总</h4><p class="sub">相同写法合并显示。可以在这里给整类写法批量标记核查结果，再到下方逐条调整。</p><div class="scroll" id="pt-mats"></div></div>
+  <div class="card" style="margin-top:14px"><h4>零件明细</h4>
+    <div class="pfilters"><input id="pt-q" type="search" placeholder="搜索零件名称 / 规格 / 材质，如：传动轴、M1.5、SUM24L"><select id="pt-model"></select><select id="pt-sub"></select><select id="pt-flt"><option value="">全部</option><option value="flag">有自动提示</option><option value="none">未核查</option><option value="ok">合理</option><option value="doubt">存疑</option><option value="replace">需更换</option></select></div>
+    <p class="sub" id="pt-count"></p><div class="scroll" id="pt-list"></div><div class="gfoot"><button class="mini" id="pt-more" type="button" hidden>显示更多</button></div></div>
 </section>
 
 <section id="garage" class="tab" role="tabpanel" aria-labelledby="t-garage" hidden>
@@ -453,7 +551,7 @@ table.data tr.sub td{color:var(--muted);font-size:12px}
 </div>
 
 <footer class="wrap">
-  <p>由 rc_calc.py 移植。车速 = KV × 电压 × 带载系数 ÷ FDR × π × 轮径；扭矩常数 Kt = 60 / (2π·KV)；齿轮弯曲应力按 Lewis 公式 σ = K·Ft / (b·m·Y)；轴扭转剪应力 τ = 16T·D / π(D⁴ − d⁴)，许用剪应力取 0.5σs；阿克曼条件 cot δo − cot δi = 主销间距 / 轴距。参数会保存在当前浏览器里。</p>
+  <p>由 rc_calc.py 移植。车速 = KV × 电压 × 带载系数 ÷ FDR × π × 轮径；扭矩常数 Kt = 60 / (2π·KV)；齿轮弯曲应力按 Lewis 公式 σ = K·Ft / (b·m·Y)；轴扭转剪应力 τ = 16T·D / π(D⁴ − d⁴)，许用剪应力取 0.5σs；阿克曼条件 cot δo − cot δi = 主销间距 / 轴距。各分页的公式和假设写在该页的说明里。参数会保存在当前浏览器里。</p>
 </footer>
 <div class="toast" id="toast" role="status" hidden></div>
 <script>
@@ -467,6 +565,8 @@ const MATERIALS = [["PA66 尼龙",60],["PA66+30% 玻纤",150],["POM 赛钢",65],
   ["6061-T6 铝",275],["7075-T6 铝",500],
   ["Q235（A3）",235],["1018 低碳钢（冷拉）",370],["SUM24L 易切削钢（冷拉）",415],
   ["45# 钢（调质）",355],["40Cr（调质）",785],["65Mn（淬火回火）",785],["20CrMnTi（渗碳淬火）",850],["10.9 级合金钢（SCM435 等）",940],["钛合金 TC4",830]];
+/* 弹性模量 E (GPa) 与密度 ρ (g/cm³)，用于临界转速、接触应力等 */
+const MATPHYS = n => /铝/.test(n) ? [69, 2.7] : /黄铜|铜/.test(n) ? [100, 8.5] : /钛/.test(n) ? [114, 4.43] : /玻纤/.test(n) ? [8, 1.36] : /PA66/.test(n) ? [2.8, 1.14] : /POM/.test(n) ? [2.9, 1.41] : [206, 7.85];
 /* 材料数据性质：std = 标准最低保证值，typ = 手册 / 常见典型值（需换成供应商数据） */
 const MATINFO = {
   "PA66 尼龙": ["干态，注塑", "typ", "拉伸强度参考值；吸湿后明显下降"],
@@ -561,6 +661,19 @@ const DEF = { kv: 3300, cells: 2, vmode: "n", volt: 7.4, lf: 0.85, pinion: 18, s
   lt: 0.5, lm: 1, lz: 13, lb: 6, lk: 2, st: 1, swheels: 4, simpact: 2, sd: 5, si: 0, ssf: 2, sl: 100,
   cap: 5000, crate: 50, avg: 20, cf: 1, cr: 1.1, wb: 260, tw: 190, ch: 40,
   kp: 160, sdi: 25, sra: 20, sbeta: 15,
+  csl: 200, ujb: 15,
+  mb: "[]", rv: "{}",
+  sax: "f", sG: 79, sRm: 1600, sz: 0.4,
+  ffq: 4, fmr: 0.6, fus: 0.08, fwd: 1.2, fDm: 14, fn: 8, fnt: 10, fL0: 40, fpre: 2, fst: 20,
+  rfq: 3.8, rmr: 0.6, rus: 0.09, rwd: 1.2, rDm: 14, rn: 8, rnt: 10, rL0: 40, rpre: 2, rst: 20,
+  gsrc: "diff", gin: 1,
+  g1a: 13, g1b: 37, g1t: "bevel", g1m: 1, g1w: 6, g1mat: "20CrMnTi（渗碳淬火）", g1h: 1450,
+  g2a: 16, g2b: 0, g2t: "spur", g2m: 1, g2w: 6, g2mat: "45# 钢（调质）", g2h: 650,
+  g3a: 16, g3b: 0, g3t: "spur", g3m: 1, g3w: 6, g3mat: "45# 钢（调质）", g3h: 650,
+  smu: 1, tbw: 30, scrub: 6, shr: 15, ssv: 1.5,
+  ptq: 1, pd: 2, pD: 5, prc: 3.5, pl: 3, mpin2: "10.9 级合金钢（SCM435 等）", mhub: "PA66+30% 玻纤",
+  tsz: "M3", tgr: "8.8", tk: 0.2, tpct: 70,
+  bpre: "608", bC: 3.45, bfr: 5, bfa: 0, bfd: 2, bspd: 25,
   ipk: 120, dbasis: "pk", fsplit: 50, csd: 6, csi: 0, mcs: "45# 钢（调质）",
   tgV: 45, tgAcc: 0, tgRun: 10, tgCur: 80, tgMass: 2.2, tgFr: 45, tgFrTol: 5, tgTurn: 1.8, tgRollM: 1.2, tgSF: 1.5, tgTemp: 80,
   lobj: "pin", mpin: "铅黄铜 HPb59-1 / C3604", mspur: "POM 赛钢", mshaft: "45# 钢（调质）" };
@@ -571,8 +684,16 @@ try {
   if (saved && typeof saved === "object") for (const k in DEF) if (typeof saved[k] === typeof DEF[k] && (typeof saved[k] !== "number" || Number.isFinite(saved[k]))) S[k] = saved[k];
 } catch (e) {}
 const MAT = Object.fromEntries(MATERIALS.map(([n, ys]) => [n, ys]));
+const THREADS_OK = ["M2", "M2.5", "M3", "M4", "M5", "M6"], GRADES_OK = ["4.8", "8.8", "10.9", "12.9", "A2-70"], BEARS_OK = ["608", "6800", "6900", "6000", "6001", "custom"];
 for (const k of ["mpin", "mspur"]) if (!(S[k] in MAT)) S[k] = DEF[k];
-for (const k of ["mcs"]) if (!MATERIALS.some(m => m[0] === S[k] && !m[2])) S[k] = DEF[k];
+for (const k of ["mcs", "mpin2"]) if (!MATERIALS.some(m => m[0] === S[k] && !m[2])) S[k] = DEF[k];
+if (!(S.mhub in MAT)) S.mhub = DEF.mhub;
+for (const k of ["g1mat", "g2mat", "g3mat"]) if (!(S[k] in MAT)) S[k] = DEF[k];
+for (const k of ["g1t", "g2t", "g3t"]) if (!["spur", "bevel"].includes(S[k])) S[k] = DEF[k];
+if (!["spur", "diff", "custom"].includes(S.gsrc)) S.gsrc = DEF.gsrc;
+if (!["f", "r"].includes(S.sax)) S.sax = DEF.sax;
+for (const k of ["mb", "rv"]) { try { JSON.parse(S[k]); } catch (e) { S[k] = DEF[k]; } if (S[k].length > 100000) S[k] = DEF[k]; }
+for (const [k, ok] of [["tsz", THREADS_OK], ["tgr", GRADES_OK], ["bpre", BEARS_OK]]) if (!ok.includes(S[k])) S[k] = DEF[k];
 if (!MATERIALS.some(m => m[0] === S.mshaft && !m[2])) S.mshaft = DEF.mshaft;
 if (!["pin", "spur", "custom"].includes(S.lobj)) S.lobj = DEF.lobj;
 if (!["pk", "min"].includes(S.dbasis)) S.dbasis = DEF.dbasis;
@@ -658,6 +779,94 @@ const BLOCKS = {
       { k: "csd", l: "中轴外径", u: "mm", step: 0.1, show: s => s.swheels === 4 },
       { k: "csi", l: "中轴内径（实心填 0）", u: "mm", step: 0.1, zero: 1, show: s => s.swheels === 4 },
       { type: "sel", k: "mcs", l: "中轴材料", show: s => s.swheels === 4 }] }],
+  chain: [
+    { t: "输入扭矩", f: [
+      { type: "seg", k: "gsrc", l: "第 1 级输入扭矩", opts: [["spur", "主齿轴设计峰值"], ["diff", "较大一侧差速输入"], ["custom", "自定义"]], h: "取自「转矩流」页；四驱时差速输入 = 主齿轴 × 前 / 后分配的较大者" },
+      { k: "gin", l: "自定义输入扭矩", u: "N·m", step: 0.01, show: s => s.gsrc === "custom" }] },
+    { t: "第 1 级", f: [
+      { type: "seg", k: "g1t", l: "类型", opts: [["spur", "直齿"], ["bevel", "伞齿"]] },
+      { k: "g1a", l: "主动齿数 z₁", u: "T", step: 1, int: 1 },
+      { k: "g1b", l: "从动齿数 z₂", u: "T", step: 1, int: 1, zero: 0 },
+      { k: "g1m", l: "模数 m（伞齿为大端）", u: "mm", step: 0.05, pre: [[0.8, "0.8"], [1, "1.0"], [1.25, "1.25"], [1.5, "1.5"]] },
+      { k: "g1w", l: "齿宽 b", u: "mm", step: 0.5 },
+      { type: "sel", k: "g1mat", l: "齿轮材料（两齿同材）", gear: 1 },
+      { k: "g1h", l: "许用接触应力", u: "MPa", step: 10, pre: [[40, "塑料 ≈40"], [650, "调质钢 ≈650"], [1150, "表面淬火 ≈1150"], [1450, "渗碳淬火 ≈1450"]], h: "按 ISO 6336-5 常见量级取整，正式按材料硬度查表" }] },
+    { t: "第 2 级", f: [
+      { type: "seg", k: "g2t", l: "类型", opts: [["spur", "直齿"], ["bevel", "伞齿"]], show: s => s.g2b > 0 },
+      { k: "g2a", l: "主动齿数 z₁", u: "T", step: 1, int: 1, show: s => s.g2b > 0 },
+      { k: "g2b", l: "从动齿数 z₂", u: "T", step: 1, int: 1, zero: 1, h: "填 0 表示不用这一级" },
+      { k: "g2m", l: "模数 m（伞齿为大端）", u: "mm", step: 0.05, show: s => s.g2b > 0, pre: [[0.8, "0.8"], [1, "1.0"], [1.25, "1.25"], [1.5, "1.5"]] },
+      { k: "g2w", l: "齿宽 b", u: "mm", step: 0.5, show: s => s.g2b > 0 },
+      { type: "sel", k: "g2mat", l: "齿轮材料（两齿同材）", gear: 1, show: s => s.g2b > 0 },
+      { k: "g2h", l: "许用接触应力", u: "MPa", step: 10, show: s => s.g2b > 0, pre: [[40, "塑料 ≈40"], [650, "调质钢 ≈650"], [1150, "表面淬火 ≈1150"], [1450, "渗碳淬火 ≈1450"]], h: "按 ISO 6336-5 常见量级取整，正式按材料硬度查表" }] },
+    { t: "第 3 级", f: [
+      { type: "seg", k: "g3t", l: "类型", opts: [["spur", "直齿"], ["bevel", "伞齿"]], show: s => s.g3b > 0 },
+      { k: "g3a", l: "主动齿数 z₁", u: "T", step: 1, int: 1, show: s => s.g3b > 0 },
+      { k: "g3b", l: "从动齿数 z₂", u: "T", step: 1, int: 1, zero: 1, h: "填 0 表示不用这一级" },
+      { k: "g3m", l: "模数 m（伞齿为大端）", u: "mm", step: 0.05, show: s => s.g3b > 0, pre: [[0.8, "0.8"], [1, "1.0"], [1.25, "1.25"], [1.5, "1.5"]] },
+      { k: "g3w", l: "齿宽 b", u: "mm", step: 0.5, show: s => s.g3b > 0 },
+      { type: "sel", k: "g3mat", l: "齿轮材料（两齿同材）", gear: 1, show: s => s.g3b > 0 },
+      { k: "g3h", l: "许用接触应力", u: "MPa", step: 10, show: s => s.g3b > 0, pre: [[40, "塑料 ≈40"], [650, "调质钢 ≈650"], [1150, "表面淬火 ≈1150"], [1450, "渗碳淬火 ≈1450"]], h: "按 ISO 6336-5 常见量级取整，正式按材料硬度查表" }] }],
+  susp: [
+    { t: "编辑", f: [
+      { type: "seg", k: "sax", l: "当前编辑", opts: [["f", "前悬架"], ["r", "后悬架"]] },
+      { k: "sG", l: "弹簧材料剪切模量 G", u: "GPa", step: 1, h: "碳素弹簧钢丝 / 65Mn / 琴钢丝约 79" },
+      { k: "sRm", l: "钢丝抗拉强度 Rm", u: "MPa", step: 10, h: "随线径变化很大：Ø1 左右的琴钢丝约 2000+，65Mn 粗线约 1000–1600，按钢丝证书填" },
+      { k: "sz", l: "目标阻尼比 ζ", u: "", step: 0.05, pre: [[0.3, "0.3 舒适"], [0.4, "0.4"], [0.5, "0.5 竞速"]] }] },
+    { t: "前悬架", f: [
+      { k: "ffq", l: "目标车身频率", u: "Hz", step: 0.1, show: s => s.sax === "f" },
+      { k: "fmr", l: "运动比 MR", u: "", step: 0.01, show: s => s.sax === "f", h: "避震行程 ÷ 车轮行程，避震斜装时还要乘 cos(倾角)" },
+      { k: "fus", l: "单侧簧下质量", u: "kg", step: 0.005, zero: 1, show: s => s.sax === "f", h: "车轮 + 轮毂 + 转向节 + 约一半摆臂和避震" },
+      { k: "fwd", l: "弹簧线径 d", u: "mm", step: 0.05, show: s => s.sax === "f" },
+      { k: "fDm", l: "弹簧中径 D", u: "mm", step: 0.1, show: s => s.sax === "f" },
+      { k: "fn", l: "有效圈数 n", u: "圈", step: 0.25, show: s => s.sax === "f" },
+      { k: "fnt", l: "总圈数", u: "圈", step: 0.25, show: s => s.sax === "f", h: "两端并紧磨平一般比有效圈数多 2 圈" },
+      { k: "fL0", l: "自由长度", u: "mm", step: 0.5, show: s => s.sax === "f" },
+      { k: "fpre", l: "预压量", u: "mm", step: 0.5, zero: 1, show: s => s.sax === "f" },
+      { k: "fst", l: "避震行程", u: "mm", step: 0.5, show: s => s.sax === "f" }] },
+    { t: "后悬架", f: [
+      { k: "rfq", l: "目标车身频率", u: "Hz", step: 0.1, show: s => s.sax === "r" },
+      { k: "rmr", l: "运动比 MR", u: "", step: 0.01, show: s => s.sax === "r", h: "避震行程 ÷ 车轮行程，避震斜装时还要乘 cos(倾角)" },
+      { k: "rus", l: "单侧簧下质量", u: "kg", step: 0.005, zero: 1, show: s => s.sax === "r", h: "车轮 + 轮毂 + 转向节 + 约一半摆臂和避震" },
+      { k: "rwd", l: "弹簧线径 d", u: "mm", step: 0.05, show: s => s.sax === "r" },
+      { k: "rDm", l: "弹簧中径 D", u: "mm", step: 0.1, show: s => s.sax === "r" },
+      { k: "rn", l: "有效圈数 n", u: "圈", step: 0.25, show: s => s.sax === "r" },
+      { k: "rnt", l: "总圈数", u: "圈", step: 0.25, show: s => s.sax === "r", h: "两端并紧磨平一般比有效圈数多 2 圈" },
+      { k: "rL0", l: "自由长度", u: "mm", step: 0.5, show: s => s.sax === "r" },
+      { k: "rpre", l: "预压量", u: "mm", step: 0.5, zero: 1, show: s => s.sax === "r" },
+      { k: "rst", l: "避震行程", u: "mm", step: 0.5, show: s => s.sax === "r" }] }],
+  cshaft: [{ t: "中轴", f: [
+    { k: "csl", l: "支承跨距（两端支点间）", u: "mm", step: 1, h: "中轴尺寸、材料在本页上方「中轴（四驱）」；转速取极速时主齿转速" },
+    { k: "ujb", l: "万向节工作角", u: "°", min: 0, max: 45, step: 0.5, sl: 1, zero: 1 }] }],
+  servo: [{ t: "转向阻力", f: [
+    { k: "smu", l: "原地转向摩擦系数 μ", u: "", step: 0.05, pre: [[0.7, "土 0.7"], [1, "柏油 1.0"], [1.3, "地毯 1.3"]] },
+    { k: "tbw", l: "前轮胎宽 B", u: "mm", step: 1 },
+    { k: "scrub", l: "主销偏距 e（接地点到主销延长线）", u: "mm", step: 0.5, zero: 1 },
+    { k: "shr", l: "舵机摆臂半径", u: "mm", step: 0.5 },
+    { k: "ssv", l: "余量系数", u: "×", step: 0.1, pre: [[1.5, "1.5"], [2, "2"], [3, "3"]] }] }],
+  pin: [
+    { t: "载荷", f: [{ k: "ptq", l: "传递扭矩", u: "N·m", step: 0.05, zero: 1, pull: [["半轴设计峰值 × 冲击", "axleDes"], ["单根半轴名义", "axleT"]] }] },
+    { t: "尺寸与材料", f: [
+      { k: "pd", l: "横销直径 d", u: "mm", step: 0.1 },
+      { k: "pD", l: "轴径 D", u: "mm", step: 0.1 },
+      { type: "sel", k: "mpin2", l: "横销材料" },
+      { k: "prc", l: "销与轮毂槽接触半径 r", u: "mm", step: 0.1, h: "约等于轴半径 + 销外露长度的一半" },
+      { k: "pl", l: "单侧承压长度 L", u: "mm", step: 0.1 },
+      { type: "sel", k: "mhub", l: "轮毂 / 六角座材料", gear: 1 }] }],
+  thread: [{ t: "螺纹", f: [
+    { type: "seg", k: "tsz", l: "规格", opts: [["M2", "M2"], ["M2.5", "M2.5"], ["M3", "M3"], ["M4", "M4"], ["M5", "M5"], ["M6", "M6"]] },
+    { type: "seg", k: "tgr", l: "强度等级", opts: [["4.8", "4.8"], ["8.8", "8.8"], ["10.9", "10.9"], ["12.9", "12.9"], ["A2-70", "A2-70 不锈"]] },
+    { k: "tpct", l: "预紧力占屈服的比例", u: "%", min: 30, max: 90, step: 1, sl: 1, h: "常用 60–75%；塑料、铝母件要低得多" },
+    { k: "tk", l: "扭矩系数 K", u: "", step: 0.01, pre: [[0.15, "润滑 0.15"], [0.2, "干燥 0.2"]] }] }],
+  bearing: [
+    { t: "轴承", f: [
+      { type: "seg", k: "bpre", l: "型号预设", opts: [["608", "608 8×22×7"], ["6800", "6800 10×19×5"], ["6900", "6900 10×22×6"], ["6000", "6000 10×26×8"], ["6001", "6001 12×28×8"], ["custom", "自定义"]] },
+      { k: "bC", l: "额定动载荷 C", u: "kN", step: 0.01, show: s => s.bpre === "custom" }] },
+    { t: "工况", f: [
+      { k: "bfr", l: "径向载荷 Fr（单个轴承）", u: "N", step: 0.1, zero: 0, pull: [["前轮静载", "wheelF"], ["后轮静载", "wheelR"]], h: "轮端两个轴承时，可按单轮静载 × 0.5–0.7 估" },
+      { k: "bfa", l: "轴向载荷 Fa", u: "N", step: 0.1, zero: 1 },
+      { k: "bfd", l: "载荷系数（冲击）", u: "×", step: 0.1, pre: [[1.2, "平稳 1.2"], [2, "一般 2"], [3, "Bash 3"]] },
+      { k: "bspd", l: "平均车速", u: "km/h", step: 1, h: "转速按轮胎直径换算（轮端轴承）" }] }],
   goals: [
     { t: "性能", f: [
       { k: "tgV", l: "极速 ≥", u: "km/h", step: 1, zero: 1 },
@@ -804,6 +1013,7 @@ function derive() {
     tm, tw, F, aRaw, aLim, a, tAcc: S.accTo / 3.6 / a, gripF: S.mu * S.mass * G,
     needFdr, needP: S.spur * S.internal / needFdr,
     pinionT: tm, spurT: tm * S.spur / S.pinion, axleT: tw / S.swheels * S.simpact,
+    wheelF: S.cf * G / 2, wheelR: S.cr * G / 2,
     betaIdeal: C.ackBeta(S.wb, S.kp), beta100: C.beta100(S.sdi, S.wb, S.kp, S.sra),
     ...flowPulls(torqueFlow()) };
 }
@@ -1264,6 +1474,475 @@ function renderSteer() {
   drawSteer(r);
 }
 
+/* ========== 零件库 · BOM 核查 ========== */
+const PKEY = "rc-calc-parts-v1", PRKEY = "rc-calc-parts-review-v1";
+let PARTS = { rows: [], src: "", t: 0 }, PREV = {}, PLIM = 100;
+try { const o = JSON.parse(localStorage.getItem(PKEY) || "null"); if (o && Array.isArray(o.rows)) PARTS = o; } catch (e) {}
+try { const o = JSON.parse(localStorage.getItem(PRKEY) || "null"); if (o && typeof o === "object") PREV = o; } catch (e) {}
+const pSave = () => { try { localStorage.setItem(PKEY, JSON.stringify(PARTS)); localStorage.setItem(PRKEY, JSON.stringify(PREV)); return true; } catch (e) { toast("浏览器存储空间不足，零件库只在本次打开期间有效"); return false; } };
+const PCOLS = { model: ["车型", "机种", "型号"], sub: ["零件细分", "细分", "分类"], name: ["零件名称", "名称", "品名"], spec: ["原始规格", "规格"],
+  dia: ["直径(mm)", "直径"], len: ["长度(mm)", "长度"], mat: ["材质", "材料"], cat: ["材质大类"], surf: ["表面处理"], qty: ["数量", "用量"] };
+const RVS = { "": "未核查", ok: "✓ 合理", doubt: "△ 存疑", replace: "✗ 需更换" };
+const pKey = r => [r.model, r.name, r.spec, r.mat, r.surf].join("|");
+function partFlags(r) {
+  const mt = (r.mat || "").trim(), nm = r.name || "", sub = r.sub || "", sp = r.surf || "", out = [];
+  const F = (k, m) => out.push([k, m]);
+  if (!mt) F("warn", "未填材质");
+  else if (/^\d+(\.\d+)?\s*T$/i.test(mt)) F("bad", "材质栏填的是板厚，缺材料");
+  else if (["铝合金", "铝", "不锈钢", "铜", "钢", "FE", "铁", "橡胶", "塑料", "合金钢"].includes(mt)) F("warn", "只有大类，缺牌号 / 状态");
+  if (/6061-?T3\b/i.test(mt)) F("bad", "6061 一般没有 T3 状态，疑为笔误");
+  if (/(^|[^\d])45#?/.test(mt) && /渗碳/.test(sp)) F("bad", "45# 为中碳钢，一般调质或表面淬火，不做渗碳");
+  if (/SUM2[34]L|12L14|易切削/i.test(mt) && (/轴|销|杯|齿/.test(nm) || /轴|齿轮|传动/.test(sub))) F("warn", "易切削钢疲劳、韧性差，用于受力轴 / 销需校核");
+  if (/SUM2[34]L|1018|^A3$|Q235/i.test(mt) && /热处理/.test(sp) && !/渗碳|淬|调质|回火|碳氮/.test(sp)) F("warn", "低碳钢「热处理」方式不明（渗碳？去应力？）");
+  if (/20CR?MNTI/i.test(mt) && !/渗碳/.test(sp)) F("warn", "20CrMnTi 应写明渗碳淬火 + 回火、渗层深度、表面硬度");
+  if (/(矽|硅)胶/.test(mt) && /油管|燃油|汽油/.test(nm)) F("warn", "硅胶管不耐汽油：汽油机需改耐油管，甲醇燃料可用");
+  if (/橡胶/.test(mt) && /油/.test(nm) && !/NBR|FKM|丁腈|氟/i.test(mt)) F("warn", "接触燃油 / 机油，需写明耐油胶种（NBR / FKM）");
+  if (/65MN|弹簧钢|SWP|琴钢/i.test(mt) && /镀/.test(sp)) F("warn", "淬硬弹簧钢电镀后需除氢烘烤，防氢脆");
+  if (/1018|^A3$|Q235/i.test(mt) && /机械螺丝|螺栓|螺钉/.test(nm)) F("warn", "低碳钢机械螺丝强度等级低，关键连接建议 8.8 / 10.9 级");
+  if (/环氧|FR-?4/i.test(mt) && /刹车|制动/.test(nm)) F("warn", "环氧板耐温有限，需验证刹车温升");
+  return out;
+}
+function pGearSpec(r) {
+  if (!/齿/.test((r.name || "") + (r.sub || ""))) return null;
+  let m = /M\s*([\d.]+)\s*[*xX×\-]\s*(\d+)\s*T/i.exec(r.spec || "");
+  if (m) return +m[1] <= 4 ? { m: +m[1], z: +m[2] } : null;
+  const mm = /M\s*([\d.]+)/i.exec(r.spec || ""), zz = /(\d+)\s*T/i.exec(r.name || "");
+  return mm && zz && +mm[1] <= 4 ? { m: +mm[1], z: +zz[1] } : null;
+}
+function parseCSV(txt) {
+  const rows = []; let row = [], cur = "", q = false;
+  for (let i = 0; i < txt.length; i++) {
+    const c = txt[i];
+    if (q) { if (c === '"') { if (txt[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true; else if (c === ",") { row.push(cur); cur = ""; } else if (c === "\n" || c === "\r") { if (c === "\r" && txt[i + 1] === "\n") i++; row.push(cur); rows.push(row); row = []; cur = ""; } else cur += c;
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+function tableToParts(aoa) {
+  let best = null;
+  for (let h = 0; h < Math.min(aoa.length, 30); h++) {
+    const hdr = aoa[h].map(x => String(x ?? "").trim()), idx = {};
+    for (const [k, names] of Object.entries(PCOLS)) { const j = hdr.findIndex(x => names.includes(x)); if (j >= 0) idx[k] = j; }
+    if (idx.name != null && idx.mat != null) { best = { h, idx }; break; }
+  }
+  if (!best) return [];
+  const out = [];
+  for (const r of aoa.slice(best.h + 1)) {
+    const g = k => best.idx[k] != null ? String(r[best.idx[k]] ?? "").trim() : "";
+    const o = { model: g("model"), sub: g("sub"), name: g("name"), spec: g("spec"), dia: g("dia"), len: g("len"), mat: g("mat"), cat: g("cat"), surf: g("surf"), qty: g("qty") };
+    if (o.name || o.mat) out.push(o);
+  }
+  return out;
+}
+let XLSXP = null;
+function loadXLSX() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return XLSXP ||= new Promise((res, rej) => {
+    const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    sc.onload = () => window.XLSX ? res(window.XLSX) : rej(); sc.onerror = () => { XLSXP = null; rej(); }; document.head.append(sc);
+  });
+}
+async function importParts(file) {
+  let rows = [];
+  if (/\.csv$/i.test(file.name)) {
+    const buf = await file.arrayBuffer(); let txt = new TextDecoder("utf-8").decode(buf);
+    if (txt.includes("�")) { try { txt = new TextDecoder("gbk").decode(buf); } catch (e) {} }
+    rows = tableToParts(parseCSV(txt.replace(/^﻿/, "")));
+  } else {
+    let X; try { X = await loadXLSX(); } catch (e) { toast("无法加载 Excel 解析组件（需要联网）。可在 Excel 里另存为 CSV 再导入"); return; }
+    let wb; try { wb = X.read(await file.arrayBuffer(), { type: "array" }); } catch (e) { toast("这个 Excel 文件无法读取，可能已损坏或不完整。请重新导出，或另存为 CSV 再试"); return; }
+    for (const nm of wb.SheetNames) { const r = tableToParts(X.utils.sheet_to_json(wb.Sheets[nm], { header: 1, defval: "", raw: false })); if (r.length > rows.length) rows = r; }
+  }
+  if (!rows.length) { toast("没找到零件表：需要含「零件名称」和「材质」列的表头"); return; }
+  PARTS = { rows: rows.slice(0, 20000), src: file.name, t: Date.now() }; PLIM = 100;
+  pSave(); renderParts(); toast(`已导入 ${rows.length} 条零件记录`);
+}
+function pFiltered() {
+  const q = ($("#pt-q").value || "").trim().toLowerCase(), md = $("#pt-model").value, sb = $("#pt-sub").value, fl = $("#pt-flt").value;
+  return PARTS.rows.filter(r => {
+    if (md && r.model !== md) return false; if (sb && r.sub !== sb) return false;
+    if (q && ![r.name, r.spec, r.mat, r.surf, r.model, r.sub].some(x => (x || "").toLowerCase().includes(q))) return false;
+    const st = (PREV[pKey(r)] || {}).s || "";
+    if (fl === "flag") return partFlags(r).length > 0;
+    if (fl === "none") return !st;
+    if (fl) return st === fl;
+    return true;
+  });
+}
+function fillSel(sel, vals, all) { const cur = sel.value; sel.replaceChildren(Object.assign(el("option", null, all), { value: "" }), ...vals.map(v => Object.assign(el("option", null, v), { value: v }))); sel.value = vals.includes(cur) ? cur : ""; }
+function renderParts() {
+  const R = PARTS.rows, models = [...new Set(R.map(r => r.model).filter(Boolean))], subs = [...new Set(R.map(r => r.sub).filter(Boolean))];
+  fillSel($("#pt-model"), models, "全部车型"); fillSel($("#pt-sub"), subs, "全部分类");
+  $("#pt-src").textContent = R.length ? `来源：${PARTS.src} · 导入于 ${fmtTime(PARTS.t)}` : "";
+  const flagged = R.filter(r => partFlags(r).length).length, rv = R.filter(r => (PREV[pKey(r)] || {}).s).length;
+  tiles($("#pt-tiles"), [
+    { k: "零件记录", v: fmt(R.length, 0), u: "条", s: `${models.length} 个车型 · ${subs.length} 个分类` },
+    { k: "有自动提示", v: fmt(flagged, 0), u: "条", s: R.length ? `占 ${fmt(flagged / R.length * 100, 0)}%` : "" },
+    { k: "已人工核查", v: fmt(rv, 0), u: "条", key: 1, s: R.length ? `占 ${fmt(rv / R.length * 100, 0)}%` : "导入后开始核查" },
+  ]);
+  // 材料写法汇总
+  const mh = $("#pt-mats");
+  if (!R.length) mh.replaceChildren(el("div", "empty", "还没有导入 BOM。"));
+  else {
+    const g = new Map();
+    for (const r of R) { const k = (r.mat || "（空）") + " ｜ " + (r.surf || "—"); const o = g.get(k) || { mat: r.mat, surf: r.surf, n: 0, flags: new Map(), rows: [] }; o.n++; o.rows.push(r); for (const [kd, m] of partFlags(r)) o.flags.set(m, kd); g.set(k, o); }
+    const t = el("table", "data parts"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+    for (const h of ["材质", "表面处理", "条数", "自动提示", "批量标记"]) hr.append(el("th", null, h));
+    for (const [k, o] of [...g.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 80)) {
+      const tr = tb.insertRow(), fl = el("td", "fl"); for (const [m, kd] of o.flags) fl.append(pill(kd, m));
+      const sel = el("select"); sel.dataset.pmat = k; for (const [v, tx] of Object.entries(RVS)) { const op = el("option", null, tx); op.value = v; sel.append(op); }
+      const sts = new Set(o.rows.map(r => (PREV[pKey(r)] || {}).s || "")); sel.value = sts.size === 1 ? [...sts][0] : ""; if (sts.size > 1) sel.prepend(Object.assign(el("option", null, "（混合）"), { value: "@mix", selected: true }));
+      const sc = el("td"); sc.append(sel);
+      tr.append(el("td", "nm", o.mat || "（空）"), el("td", null, o.surf || "—"), el("td", null, String(o.n)), fl, sc);
+    }
+    mh.replaceChildren(t);
+    mh._groups = g;
+  }
+  renderPartList();
+}
+function renderPartList() {
+  const list = pFiltered(), host = $("#pt-list");
+  $("#pt-count").textContent = PARTS.rows.length ? `筛选结果 ${list.length} 条${list.length > PLIM ? `，显示前 ${PLIM} 条` : ""}` : "";
+  $("#pt-more").hidden = list.length <= PLIM;
+  if (!PARTS.rows.length) { host.replaceChildren(); return; }
+  const t = el("table", "data parts"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+  for (const h of ["零件", "规格 / 尺寸", "材质 · 表面处理", "自动提示", "核查", ""]) hr.append(el("th", null, h));
+  for (const r of list.slice(0, PLIM)) {
+    const key = pKey(r), st = PREV[key] || {}, tr = tb.insertRow();
+    const nm = el("td", "nm", r.name || "—"); nm.append(el("small", null, [r.model, r.sub, r.qty ? "×" + r.qty : ""].filter(Boolean).join(" · ")));
+    const fl = el("td", "fl"); for (const [kd, m] of partFlags(r)) fl.append(pill(kd, m));
+    const sel = el("select"); sel.dataset.pk = key; for (const [v, tx] of Object.entries(RVS)) { const op = el("option", null, tx); op.value = v; sel.append(op); } sel.value = st.s || "";
+    const sc = el("td"); sc.append(sel);
+    const act = el("td", "acts"), gs = pGearSpec(r), dia = parseFloat(r.dia);
+    if (Number.isFinite(dia) && dia > 0 && /轴/.test(r.name + r.sub)) { const b = el("button", "mini", "带入轴径"); b.type = "button"; b.dataset.pdia = dia; act.append(b); }
+    if (gs) { const b = el("button", "mini", "带入齿轮"); b.type = "button"; b.dataset.pm = gs.m; b.dataset.pz = gs.z; act.append(b); }
+    tr.append(nm, el("td", null, [r.spec, r.dia && `Ø${r.dia}`, r.len && `L${r.len}`].filter(Boolean).join(" · ") || "—"), el("td", null, [r.mat, r.surf].filter(Boolean).join(" · ") || "—"), fl, sc, act);
+  }
+  host.replaceChildren(t);
+}
+$("#parts").addEventListener("change", e => {
+  const t = e.target;
+  if (t.dataset.pk) { if (t.value) PREV[t.dataset.pk] = { s: t.value, t: Date.now() }; else delete PREV[t.dataset.pk]; pSave(); renderParts(); }
+  else if (t.dataset.pmat && t.value !== "@mix") {
+    const o = $("#pt-mats")._groups && $("#pt-mats")._groups.get(t.dataset.pmat); if (!o) return;
+    for (const r of o.rows) { const k = pKey(r); if (t.value) PREV[k] = { s: t.value, t: Date.now() }; else delete PREV[k]; }
+    pSave(); renderParts(); toast(`已把 ${o.n} 条「${o.mat || "（空）"}」标记为 ${RVS[t.value]}`);
+  } else if (["pt-model", "pt-sub", "pt-flt"].includes(t.id)) { PLIM = 100; renderPartList(); }
+});
+$("#pt-q").addEventListener("input", () => { PLIM = 100; renderPartList(); });
+$("#pt-file").addEventListener("change", e => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (f) importParts(f).catch(() => toast("导入失败")); });
+$("#parts").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.id === "pt-import") $("#pt-file").click();
+  else if (b.id === "pt-more") { PLIM += 200; renderPartList(); }
+  else if (b.id === "pt-clear") {
+    if (!b.classList.contains("arm")) { b.classList.add("arm"); b.textContent = "确认清空（核查标记保留）"; setTimeout(() => { b.classList.remove("arm"); b.textContent = "清空零件库"; }, 3000); return; }
+    PARTS = { rows: [], src: "", t: 0 }; pSave(); b.classList.remove("arm"); b.textContent = "清空零件库"; renderParts(); toast("已清空零件库");
+  } else if (b.id === "pt-export") {
+    if (!PARTS.rows.length) { toast("还没有导入 BOM"); return; }
+    const esc = v => /[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v;
+    const lines = [["车型", "零件细分", "零件名称", "规格", "直径", "长度", "材质", "表面处理", "数量", "自动提示", "核查结果"].join(",")];
+    for (const r of PARTS.rows) lines.push([r.model, r.sub, r.name, r.spec, r.dia, r.len, r.mat, r.surf, r.qty, partFlags(r).map(f => f[1]).join("；"), RVS[(PREV[pKey(r)] || {}).s || ""]].map(v => esc(v ?? "")).join(","));
+    const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv" }), a = el("a"); a.href = URL.createObjectURL(blob); a.download = `bom-review-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); toast("已导出，Excel 可直接打开");
+  } else if (b.dataset.pdia) { S.sd = +b.dataset.pdia; update(); showTab("shaft", true); window.scrollTo(0, 0); toast(`轴径已带入 Ø${b.dataset.pdia}，请确认材料与扭矩`); }
+  else if (b.dataset.pm) { S.lm = +b.dataset.pm; S.lobj = "custom"; S.lz = +b.dataset.pz; update(); showTab("gear", true); toast(`已带入 模数 ${b.dataset.pm}、${b.dataset.pz} 齿（自定义校核对象），请填扭矩`); }
+});
+
+/* ========== 质量预算 ========== */
+const MB_SYS = ["底盘 / 车架", "动力电子", "电池", "传动", "悬架", "转向", "轮端", "车壳 / 外观", "紧固件 / 其他"];
+const MB_TPL = [["底盘 / 车架", "底盘"], ["动力电子", "电机"], ["动力电子", "电调"], ["电池", "电池"], ["转向", "舵机"], ["动力电子", "接收机"],
+  ["传动", "前差速器总成"], ["传动", "后差速器总成"], ["传动", "中轴 / 齿轮"], ["悬架", "前避震 ×2"], ["悬架", "后避震 ×2"], ["悬架", "摆臂（簧上一半）"],
+  ["轮端", "前轮胎 + 轮毂 ×2", 1], ["轮端", "后轮胎 + 轮毂 ×2", 1], ["轮端", "转向节 / C 座 / 后轮座", 1], ["车壳 / 外观", "车壳"], ["紧固件 / 其他", "螺丝 / 线材 / 其他"]];
+const mbRows = () => { try { const a = JSON.parse(S.mb); return Array.isArray(a) ? a.filter(r => r && typeof r === "object") : []; } catch (e) { return []; } };
+const mbSet = rows => { S.mb = JSON.stringify(rows); update(); };
+const num = v => (v === "" || v == null || !Number.isFinite(+v)) ? NaN : +v;
+function mbStats(rows) {
+  let tot = 0, uns = 0, mx = 0, mPos = 0; const sys = {};
+  for (const r of rows) {
+    const m = (num(r.g) || 0) * (num(r.q) || 0); tot += m; if (r.u) uns += m;
+    sys[r.sys] = (sys[r.sys] || 0) + m;
+    if (Number.isFinite(num(r.x)) && m > 0) { mx += m * num(r.x); mPos += m; }
+  }
+  const cx = mPos > 0 ? mx / mPos : NaN;
+  return { tot, uns, sys, cx, cover: tot > 0 ? mPos / tot : 0, front: Number.isFinite(cx) ? (1 - cx / S.wb) * 100 : NaN };
+}
+function renderMass() {
+  const rows = mbRows(), st = mbStats(rows), wt = (S.cf + S.cr) * 1000;
+  tiles($("#mb-tiles"), [
+    { k: "预算总质量", v: fmt(st.tot / 1000, 3), u: "kg", key: 1, s: `称重 ${fmt(wt / 1000, 3)} kg，差 ${fmt((st.tot - wt) / 1000, 3)} kg${S.tgMass > 0 ? ` · 目标 ≤ ${fmtIn(S.tgMass)} kg` : ""}`,
+      pill: S.tgMass > 0 && st.tot > 0 ? pill(st.tot / 1000 <= S.tgMass ? "good" : "bad", st.tot / 1000 <= S.tgMass ? "在目标内" : "超出目标") : null },
+    { k: "簧下质量", v: fmt(st.uns / 1000, 3), u: "kg", s: st.tot > 0 ? `占总质量 ${fmt(st.uns / st.tot * 100, 1)}%` : "" },
+    { k: "预算重心 · 前轴荷", v: fmt(st.front, 1), u: "%", s: Number.isFinite(st.cx) ? `重心距前轴 ${fmt(st.cx, 1)} mm（轴距 ${fmtIn(S.wb)}）；已填位置的零件占 ${fmt(st.cover * 100, 0)}%` : "填写零件位置后计算" },
+  ]);
+  const host = $("#mb-table");
+  if (!host.contains(document.activeElement)) {
+    const t = el("table", "data edit"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+    for (const h of ["系统", "零件", "单件 g", "数量", "小计 g", "位置 mm", "簧下", ""]) hr.append(el("th", null, h));
+    rows.forEach((r, i) => {
+      const tr = tb.insertRow(), sel = el("select"); sel.dataset.i = i; sel.dataset.f = "sys";
+      for (const o of MB_SYS) { const op = el("option", null, o); op.value = o; sel.append(op); } sel.value = MB_SYS.includes(r.sys) ? r.sys : MB_SYS[MB_SYS.length - 1];
+      const inp = (f, cls, type) => { const x = el("input", cls); x.type = type || "text"; x.value = r[f] ?? ""; x.dataset.i = i; x.dataset.f = f; if (type === "number") x.step = "any"; return x; };
+      const cb = el("input"); cb.type = "checkbox"; cb.checked = !!r.u; cb.dataset.i = i; cb.dataset.f = "u"; cb.setAttribute("aria-label", "簧下");
+      const del = el("button", "mini danger", "删除"); del.type = "button"; del.dataset.mbdel = i;
+      const td = x => { const c = el("td"); c.append(x); return c; }, tdc = x => { const c = el("td", "c"); c.append(x); return c; };
+      tr.append(td(sel), td(inp("n", "t")), td(inp("g", "n", "number")), td(inp("q", "n", "number")), el("td", "sum", fmt((num(r.g) || 0) * (num(r.q) || 0), 1)), td(inp("x", "n", "number")), tdc(cb), td(del));
+    });
+    if (!rows.length) tb.insertRow().append(Object.assign(el("td", "ne", "还没有零件。点「载入常用模板」或「添加一行」开始。"), { colSpan: 8 }));
+    host.replaceChildren(t);
+  } else {
+    host.querySelectorAll("tbody tr").forEach((tr, i) => { const r = rows[i], c = tr.querySelector("td.sum"); if (r && c) c.textContent = fmt((num(r.g) || 0) * (num(r.q) || 0), 1); });
+  }
+  const ts = el("table", "data"), sh = ts.createTHead().insertRow(), sb = ts.createTBody();
+  for (const h of ["系统", "质量 g", "占比"]) sh.append(el("th", null, h));
+  for (const k of MB_SYS) { const m = st.sys[k] || 0; if (!m) continue; const tr = sb.insertRow(); tr.append(el("td", null, k), el("td", null, fmt(m, 1)), el("td", null, fmt(m / st.tot * 100, 1) + "%")); }
+  $("#mb-sys").replaceChildren(ts);
+  $("#mb-sys-sub").textContent = st.tot > 0 ? `合计 ${fmt(st.tot, 1)} g` : "";
+}
+$("#mass").addEventListener("input", e => {
+  const t = e.target, i = +t.dataset.i, f = t.dataset.f; if (!f || !Number.isInteger(i)) return;
+  const rows = mbRows(); if (!rows[i]) return;
+  rows[i][f] = t.type === "checkbox" ? t.checked : t.value;
+  mbSet(rows);
+});
+$("#mass").addEventListener("change", e => { const t = e.target; if (t.dataset.f === "sys" || t.type === "checkbox") { const rows = mbRows(), i = +t.dataset.i; if (rows[i]) { rows[i][t.dataset.f] = t.type === "checkbox" ? t.checked : t.value; mbSet(rows); } } });
+$("#mass").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.id === "mb-add") { const rows = mbRows(); rows.push({ sys: MB_SYS[0], n: "", g: "", q: 1, x: "", u: false }); mbSet(rows); }
+  else if (b.id === "mb-tpl") { const rows = mbRows(); for (const [sys, n, u] of MB_TPL) rows.push({ sys, n, g: "", q: 1, x: "", u: !!u }); mbSet(rows); toast("已添加模板行，填入质量即可"); }
+  else if (b.dataset.mbdel != null) { const rows = mbRows(); rows.splice(+b.dataset.mbdel, 1); mbSet(rows); }
+  else if (b.id === "mb-apply") {
+    const st = mbStats(mbRows()); if (!(st.tot > 0) || !Number.isFinite(st.front)) { toast("需要先填质量和位置"); return; }
+    const tot = st.tot / 1000; S.cf = +(tot * st.front / 100).toFixed(3); S.cr = +(tot - S.cf).toFixed(3); update();
+    toast(`称重已改为 前 ${S.cf} / 后 ${S.cr} kg（按预算，非实测）`);
+  } else if (b.id === "mb-copy") {
+    const tsv = [["系统", "零件", "单件 g", "数量", "小计 g", "位置 mm", "簧下"].join("\t"), ...mbRows().map(r => [r.sys, r.n, r.g, r.q, (num(r.g) || 0) * (num(r.q) || 0), r.x, r.u ? "是" : ""].join("\t"))].join("\n");
+    try { navigator.clipboard.writeText(tsv).then(() => toast("已复制，可粘贴到 Excel / WPS"), () => toast("复制失败，请手动选择")); } catch (e) { toast("复制失败，请手动选择"); }
+  }
+});
+
+/* ========== 评审 · 节点 ========== */
+const GATES = [
+  ["G0 机会评审", "用户与市场问题明确", [["g0a", "商业目标"], ["g0b", "竞品分析"], ["g0c", "风险清单"], ["g0d", "资源计划"]]],
+  ["G1 任务书冻结", "场景和指标可测量", [["g1a", "产品任务书（场景与可量化指标）", "goals"], ["g1b", "法规清单"], ["g1c", "目标成本"]]],
+  ["G2 架构冻结", "完成方案比较", [["g2a", "总布置"], ["g2b", "系统框图"], ["g2c", "质量预算", "mass"], ["g2d", "功率 / 转矩预算", "torque"], ["g2e", "成本预算"]]],
+  ["G3 系统方案冻结", "接口和载荷已分解", [["g3a", "系统需求"], ["g3b", "接口文件"], ["g3c", "初版 DFMEA"], ["g3d", "DVP 试验计划"]]],
+  ["G4 零件设计发布", "关键计算和样件通过", [["g4a", "3D / 2D 图纸"], ["g4b", "材料规范（牌号、状态、热处理、硬度）", "torque"], ["g4c", "BOM", "summary"], ["g4d", "计算书", "summary"], ["g4e", "检验计划"]]],
+  ["G5 DV 通过", "设计样车完成验证", [["g5a", "DV 报告（实测记录）", "goals"], ["g5b", "问题关闭"], ["g5c", "设计修订"]]],
+  ["G6 PV 通过", "量产过程稳定", [["g6a", "PV 报告"], ["g6b", "过程能力"], ["g6c", "工装和作业文件"]]],
+  ["G7 SOP / 发布", "供应和质量闭环", [["g7a", "冻结 BOM"], ["g7b", "备件"], ["g7c", "说明书"], ["g7d", "变更基线"]]],
+];
+const REDLINES = [
+  ["r1", "目标是否可量化，测试方法是否已定义？", "goals"], ["r2", "名义载荷、峰值载荷和载荷谱是否分开？", "torque"],
+  ["r3", "主要失效模式和受保护的薄弱件是否明确？", "torque"], ["r4", "质量、功率、热、空间、成本预算是否仍然闭合？", "mass"],
+  ["r5", "材料是否包含牌号、状态、热处理和硬度，而不是只写大类？", "torque"], ["r6", "轴、齿轮、轴承、悬架和紧固接口是否完成强度 / 刚度 / 寿命校核？", "conn"],
+  ["r7", "公差是否对应功能、工艺和检测，尺寸链是否闭合？"], ["r8", "关键件是否可装、可拆、可维护，工具是否可达？"],
+  ["r9", "台架、整车和环境试验是否覆盖真实最恶劣工况？", "goals"], ["r10", "试验问题是否回写需求、图纸、BOM、FMEA 和检验规范？"],
+];
+const rvMap = () => { try { const o = JSON.parse(S.rv); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } };
+function rvStats(m) {
+  const all = GATES.flatMap(g => g[2].map(x => x[0])), done = all.filter(id => m[id] && m[id].d).length;
+  const red = REDLINES.filter(r => m[r[0]] && m[r[0]].d).length;
+  let cur = "—"; for (const [nm, , items] of GATES) { if (!items.every(x => m[x[0]] && m[x[0]].d)) { cur = nm; break; } cur = "全部完成"; }
+  return { done, all: all.length, red, cur };
+}
+function ckRow(id, text, tab, m) {
+  const st = m[id] || {}, row = el("div", "ck-row" + (st.d ? " done" : "")), cb = el("input");
+  cb.type = "checkbox"; cb.checked = !!st.d; cb.dataset.rv = id; cb.setAttribute("aria-label", text);
+  const note = el("input"); note.type = "text"; note.placeholder = "备注 / 文件位置"; note.value = st.n || ""; note.dataset.rvn = id; note.maxLength = 200;
+  const go = el("span"); if (tab) { const b = el("button", "mini", "去" + (TABNAME[tab] || "")); b.type = "button"; b.dataset.tab = tab; go.append(b); }
+  row.append(cb, el("span", null, text), note, go); return row;
+}
+function renderReview() {
+  const m = rvMap(), st = rvStats(m);
+  tiles($("#rv-tiles"), [
+    { k: "节点输出完成", v: `${st.done} / ${st.all}`, u: "项", key: 1, s: `当前节点：${st.cur}` },
+    { k: "红线问题已确认", v: `${st.red} / ${REDLINES.length}`, u: "条", pill: pill(st.red === REDLINES.length ? "good" : "warn", st.red === REDLINES.length ? "全部确认" : "尚有未确认") },
+  ]);
+  const body = $("#rv-body"); if (body.contains(document.activeElement)) return;
+  const frag = document.createDocumentFragment();
+  for (const [nm, cond, items] of GATES) {
+    const n = items.filter(x => m[x[0]] && m[x[0]].d).length, box = el("div", "gate"), h = el("h4", null, nm);
+    h.append(el("small", null, `进入条件：${cond} · ${n}/${items.length}`)); box.append(h);
+    const pr = el("div", "prog"), bar = el("i"); bar.style.width = (n / items.length * 100) + "%"; pr.append(bar); box.append(pr);
+    for (const [id, text, tab] of items) box.append(ckRow(id, text, tab, m));
+    frag.append(box);
+  }
+  const rb = el("div", "gate"), rh = el("h4", null, "每次评审的红线问题"); rh.append(el("small", null, `${st.red}/${REDLINES.length}`)); rb.append(rh);
+  for (const [id, text, tab] of REDLINES) rb.append(ckRow(id, text, tab, m));
+  frag.append(rb); body.replaceChildren(frag);
+}
+$("#review").addEventListener("change", e => {
+  const t = e.target, m = rvMap();
+  if (t.dataset.rv) { (m[t.dataset.rv] ||= {}).d = t.checked; t.closest(".ck-row").classList.toggle("done", t.checked); S.rv = JSON.stringify(m); t.blur(); update(); }
+});
+$("#review").addEventListener("input", e => {
+  const t = e.target; if (!t.dataset.rvn) return;
+  const m = rvMap(); (m[t.dataset.rvn] ||= {}).n = t.value.slice(0, 200); S.rv = JSON.stringify(m); update();
+});
+
+/* ========== 悬架 · 弹簧 ========== */
+function springCalc(a) {
+  const P = k => S[a + k], axle = a === "f" ? S.cf : S.cr, mc = axle / 2, ms = mc - P("us"), MR = P("mr");
+  const kwT = ms * (2 * Math.PI * P("fq")) ** 2 / 1000, ksT = kwT / MR ** 2;                     // N/mm
+  const d = P("wd"), Dm = P("Dm"), n = P("n"), Cx = Dm / d, k = S.sG * 1000 * d ** 4 / (8 * Dm ** 3 * n);
+  const kw = k * MR ** 2, fq = Math.sqrt(kw * 1000 / ms) / (2 * Math.PI);
+  const Fst = ms * G / MR, defl = Fst / k, sag = defl / MR;                                       // 静态
+  const comp = P("pre") + P("st"), Fmax = k * comp, Kw = (4 * Cx - 1) / (4 * Cx - 4) + 0.615 / Cx;
+  const tau = Kw * 8 * Fmax * Dm / (Math.PI * d ** 3), tauA = 0.45 * S.sRm;
+  const Ls = P("nt") * d, Lmin = P("L0") - comp, gap = Lmin - Ls;
+  const cc = 2 * Math.sqrt(kw * 1000 * ms), cw = S.sz * cc, cs = cw / MR ** 2;                    // N·s/m
+  return { a, axle, ms, MR, kwT, ksT, k, kw, fq, sag, defl, Fst, preF: k * P("pre"), Fmax, Cx, Kw, tau, tauA, sf: tauA / tau, Ls, Lmin, gap, cs, cw, travelW: P("st") / MR };
+}
+function renderSusp() {
+  const F = springCalc("f"), R = springCalc("r"), cur = S.sax === "f" ? F : R, nm = S.sax === "f" ? "前" : "后";
+  const kd = cur.k / cur.ksT, kk = v => !Number.isFinite(v) ? null : v >= 1.2 ? "good" : v >= 1 ? "warn" : "bad";
+  tiles($("#sp-tiles"), [
+    { k: `${nm}·目标弹簧刚度`, v: fmt(cur.ksT, 3), u: "N/mm", s: `簧上 ${fmt(cur.ms, 3)} kg/侧 · ${fmtIn(S[S.sax + "fq"])} Hz · MR ${fmtIn(cur.MR)}` },
+    { k: `${nm}·当前弹簧刚度`, v: fmt(cur.k, 3), u: "N/mm", key: 1, s: `为目标的 ${fmt(kd * 100, 0)}% → 车身频率 ${fmt(cur.fq, 2)} Hz`,
+      pill: pill(Math.abs(kd - 1) <= 0.1 ? "good" : Math.abs(kd - 1) <= 0.25 ? "warn" : "bad", Math.abs(kd - 1) <= 0.1 ? "接近目标" : kd > 1 ? "偏硬" : "偏软") },
+    { k: `${nm}·静态下沉（车轮处）`, v: fmt(cur.sag, 1), u: "mm", s: `车轮总行程 ${fmt(cur.travelW, 1)} mm，下沉占 ${fmt(cur.sag / cur.travelW * 100, 0)}%（常见 25–40%）` },
+    { k: `${nm}·全压缩剪应力`, v: fmt(cur.tau, 0), u: "MPa", s: `许用 ${fmt(cur.tauA, 0)} MPa（0.45 Rm），旋绕比 C = ${fmt(cur.Cx, 1)}`, pill: kk(cur.sf) && pill(kk(cur.sf), `SF ${fmt(cur.sf, 2)}`) },
+    { k: `${nm}·全压缩剩余间隙`, v: fmt(cur.gap, 1), u: "mm", s: `压到 ${fmt(cur.Lmin, 1)} mm，并圈高度 ${fmt(cur.Ls, 1)} mm`, pill: pill(cur.gap > 0.1 * cur.Ls ? "good" : cur.gap > 0 ? "warn" : "bad", cur.gap > 0.1 * cur.Ls ? "不会并圈" : cur.gap > 0 ? "余量太小" : "会压并") },
+    { k: `${nm}·建议避震阻尼`, v: fmt(cur.cs, 1), u: "N·s/m", s: `阻尼比 ${fmtIn(S.sz)}，换算到车轮处 ${fmt(cur.cw, 1)} N·s/m` },
+  ]);
+  const t = el("table", "data"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+  for (const h of ["项目", "前", "后"]) hr.append(el("th", null, h));
+  for (const [l, f, dp] of [["单侧簧上质量 kg", x => x.ms, 3], ["目标弹簧刚度 N/mm", x => x.ksT, 3], ["当前弹簧刚度 N/mm", x => x.k, 3], ["车身频率 Hz", x => x.fq, 2],
+    ["轮端刚度 N/mm", x => x.kw, 3], ["静态下沉（车轮）mm", x => x.sag, 1], ["预压力 N", x => x.preF, 1], ["全压缩弹簧力 N", x => x.Fmax, 1],
+    ["全压缩剪应力 MPa", x => x.tau, 0], ["弹簧安全系数", x => x.sf, 2], ["剩余间隙 mm", x => x.gap, 1], ["建议避震阻尼 N·s/m", x => x.cs, 1]]) {
+    const tr = tb.insertRow(); tr.append(el("td", "l", l), el("td", null, fmt(f(F), dp)), el("td", null, fmt(f(R), dp)));
+  }
+  $("#sp-table").replaceChildren(t);
+  const w = $("#sp-warn"); w.replaceChildren();
+  for (const x of [F, R]) {
+    const nm2 = x.a === "f" ? "前" : "后", add = (k, m) => { const d = el("div", "warnline"); d.append(pill(k, nm2 + "悬架"), el("span", null, m)); w.append(d); };
+    if (!(x.ms > 0)) add("bad", "簧下质量不能大于该侧轴荷的一半。");
+    if (x.Cx < 4 || x.Cx > 14) add("warn", `旋绕比 C = ${fmt(x.Cx, 1)}，常用范围 4–12：太小难绕制，太大容易屈曲、刚度不稳。`);
+    if (x.sag / x.travelW > 0.6) add("warn", "静态下沉超过总行程的 60%，车身会贴底，需要更硬的弹簧或加预压。");
+  }
+}
+
+/* ========== 多级减速链 ========== */
+const ZH = 2.495;
+function chainStages() {
+  const fl = D.flow, T0 = S.gsrc === "spur" ? fl.tsDes : S.gsrc === "diff" ? fl.tsDes * (fl.four ? Math.max(fl.f, 1 - fl.f) : 1) : S.gin;
+  const out = []; let T = T0;
+  for (const k of [1, 2, 3]) {
+    const z1 = S[`g${k}a`], z2 = S[`g${k}b`]; if (!(z2 > 0)) continue;
+    const m = S[`g${k}m`], b = S[`g${k}w`], mat = S[`g${k}mat`], hl = S[`g${k}h`], bev = S[`g${k}t`] === "bevel", u = z2 / z1, K = S.lk;
+    const [E] = MATPHYS(mat), nu = /PA66|POM/.test(mat) ? 0.35 : 0.3, ZE = Math.sqrt(1 / (Math.PI * 2 * (1 - nu ** 2) / (E * 1000)));
+    let d1, mm, zv1, zv2, uv, dv1, Re = NaN, warn = "";
+    if (bev) {
+      const d1r = Math.atan(z1 / z2), d2r = Math.PI / 2 - d1r; Re = m * z1 / (2 * Math.sin(d1r));
+      const f = 1 - 0.5 * b / Re; d1 = m * z1 * f; mm = m * f; zv1 = z1 / Math.cos(d1r); zv2 = z2 / Math.cos(d2r); uv = zv2 / zv1; dv1 = d1 / Math.cos(d1r);
+      if (b > Re / 3) warn = `齿宽 ${fmtIn(b)} mm 超过锥距的 1/3（${fmt(Re / 3, 1)} mm），伞齿一般 b ≤ R/3`;
+    } else { d1 = m * z1; mm = m; zv1 = z1; zv2 = z2; uv = u; dv1 = d1; }
+    const Ft = 2 * T * 1000 / d1;
+    const sF1 = K * Ft / (b * mm * C.lewisY(zv1)), sF2 = K * Ft / (b * mm * C.lewisY(zv2));
+    const sH = ZE * ZH * Math.sqrt(K * Ft / (b * dv1) * (uv + 1) / uv);
+    if (!warn && z1 < 17 && !bev) warn = `主动轮 ${z1} 齿少于 17，标准齿形会根切`;
+    out.push({ k, bev, z1, z2, u, m, b, mat, T, Ft, sF1, sF2, sfF1: MAT[mat] / sF1, sfF2: MAT[mat] / sF2, sH, hl, sfH: hl / sH, Re, warn, ZE });
+    T *= u;
+  }
+  return { T0, stages: out, ratio: out.reduce((p, x) => p * x.u, 1) };
+}
+function renderChain() {
+  const c = chainStages(), tg = S.tgSF > 0 ? S.tgSF : 1.5, kk = v => !Number.isFinite(v) ? null : v >= tg ? "good" : v >= 1 ? "warn" : "bad";
+  const minF = Math.min(...c.stages.flatMap(x => [x.sfF1, x.sfF2])), minH = Math.min(...c.stages.map(x => x.sfH));
+  tiles($("#ch-tiles"), [
+    { k: "减速链总减速比", v: c.stages.length ? fmt(c.ratio, 3) : "—", u: ": 1", key: 1, s: c.stages.map(x => `${x.z1}/${x.z2}`).join(" × ") + ` · 当前内部减速比 ${fmtIn(S.internal)}` },
+    { k: "第 1 级输入扭矩", v: fmt(c.T0, 3), u: "N·m", s: S.gsrc === "custom" ? "自定义" : "设计峰值，取自「转矩流」页（不含 K）" },
+    { k: "最低弯曲 SF", v: fmt(minF, 2), u: "×", pill: kk(minF) && pill(kk(minF), kk(minF) === "good" ? "合格" : kk(minF) === "warn" ? "偏低" : "不足") },
+    { k: "最低接触 SF", v: fmt(minH, 2), u: "×", pill: kk(minH) && pill(kk(minH), kk(minH) === "good" ? "合格" : kk(minH) === "warn" ? "偏低，有点蚀风险" : "不足") },
+  ]);
+  $("#ch-sub").textContent = `动载系数 K = ${fmtIn(S.lk)}（与下方弯曲强度共用）；SF 着色按目标 ${fmtIn(tg)}。`;
+  const t = el("table", "data"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+  for (const h of ["级", "齿数 / 类型", "输入扭矩", "切向力 Ft", "弯曲 σF 主 / 从", "弯曲 SF 主 / 从", "接触 σH", "接触 SF"]) hr.append(el("th", null, h));
+  const pc = v => { const td = el("td"), q = kk(v); if (q) td.append(pill(q, fmt(v, 2))); else td.textContent = "—"; return td; };
+  for (const x of c.stages) {
+    const tr = tb.insertRow(), nm = el("td", "nm", `${x.z1} / ${x.z2}`); nm.append(el("small", null, `${x.bev ? "伞齿" : "直齿"} · m${fmtIn(x.m)} · b${fmtIn(x.b)} · ${x.mat}`));
+    const sf = el("td"); for (const v of [x.sfF1, x.sfF2]) { const q = kk(v); sf.append(q ? pill(q, fmt(v, 2)) : document.createTextNode("—"), document.createTextNode(" ")); }
+    tr.append(el("td", null, String(x.k)), nm, el("td", null, fmt(x.T, 3)), el("td", null, fmt(x.Ft, 0) + " N"), el("td", null, `${fmt(x.sF1, 0)} / ${fmt(x.sF2, 0)} MPa`), sf, el("td", null, fmt(x.sH, 0) + " MPa"), pc(x.sfH));
+    if (x.warn) { const w = tb.insertRow(); w.className = "sub"; const td = el("td", null, "△ " + x.warn); td.colSpan = 8; w.append(td); }
+  }
+  if (!c.stages.length) tb.insertRow().append(Object.assign(el("td", "ne", "第 1 级从动齿数不能为 0"), { colSpan: 8 }));
+  $("#ch-table").replaceChildren(t);
+}
+$("#ch-apply").addEventListener("click", () => {
+  const c = chainStages(); if (!c.stages.length) return;
+  S.internal = +c.ratio.toFixed(4); update(); toast(`内部减速比已改为 ${fmtIn(S.internal)}，车速、转矩流都已按新值重算`);
+});
+
+/* ========== 中轴临界转速 · 万向节 ========== */
+function renderCShaft() {
+  const [E, rho] = MATPHYS(S.mcs), D_ = S.csd, d_ = S.csi, L = S.csl;
+  const I = Math.PI * (D_ ** 4 - d_ ** 4) / 64, A = Math.PI * (D_ ** 2 - d_ ** 2) / 4;
+  const w = (Math.PI / L) ** 2 * Math.sqrt(E * 1000 * I / (rho * 1e-9 * A)), nc = w * 60 / (2 * Math.PI);
+  const nop = D.rpm0 * S.lf / (S.spur / S.pinion), ratio = nop / nc, b = S.ujb * RAD;
+  const fl = b > 0 ? (1 / Math.cos(b) - 1) * 100 : 0;
+  const k = !Number.isFinite(ratio) ? null : ratio < 0.7 ? "good" : ratio < 1 ? "warn" : "bad";
+  tiles($("#cs2-tiles"), [
+    { k: "一阶临界转速", v: fmt(nc, 0), u: "rpm", s: `两端简支，${S.mcs}（E ${E} GPa，ρ ${rho}）` },
+    { k: "极速时中轴转速", v: fmt(nop, 0), u: "rpm", key: 1, s: `为临界的 ${fmt(ratio * 100, 0)}%（建议 < 70%）`,
+      pill: k && pill(k, k === "good" ? "安全" : k === "warn" ? "接近共振" : "超过临界，会甩振") },
+    { k: "十字万向节速度波动", v: S.ujb > 0 ? "±" + fmt(fl, 1) : "0", u: "%", s: S.ujb > 0 ? `输出轴角速度在 ${fmt(Math.cos(b), 3)}–${fmt(1 / Math.cos(b), 3)} 倍之间每转波动两次；两端同角度对称布置可抵消，CVD 等速节无此问题` : "工作角为 0" },
+  ]);
+  const w2 = $("#cs2-warn"); w2.replaceChildren();
+  if (S.swheels !== 4) { const d = el("div", "warnline"); d.append(pill("warn", "提示"), el("span", null, "当前为后驱，没有中轴；以上按「中轴（四驱）」参数计算，仅供参考。")); w2.append(d); }
+  if (d_ >= D_) { const d = el("div", "warnline"); d.append(pill("bad", "无解"), el("span", null, "中轴内径必须小于外径。")); w2.append(d); }
+}
+
+/* ========== 舵机扭矩 ========== */
+function renderServo() {
+  const N = S.cf * G / 2, M = S.smu * N * Math.sqrt(S.tbw ** 2 / 8 + S.scrub ** 2);   // N·mm
+  const T = 2 * M / S.sra * S.shr * S.ssv, kgcm = T / 98.0665;
+  tiles($("#sv-tiles"), [
+    { k: "单轮原地转向阻力矩", v: fmt(M / 1000, 3), u: "N·m", s: `单轮载荷 ${fmt(N, 1)} N（前轴称重 ${fmtIn(S.cf)} kg ÷ 2）` },
+    { k: "舵机所需扭矩", v: fmt(kgcm, 2), u: "kg·cm", key: 1, s: `= ${fmt(T / 1000, 3)} N·m，含余量 ${fmtIn(S.ssv)}；转向臂 ${fmtIn(S.sra)} mm（转向页）、摆臂 ${fmtIn(S.shr)} mm` },
+    { k: "舵机摆臂 / 转向臂", v: fmt(S.shr / S.sra, 2), u: "×", s: "比值越大，舵机行程放大越多，但所需扭矩越大" },
+  ]);
+}
+
+/* ========== 横销 · 螺纹 · 轴承 ========== */
+const THREAD = { M2: [2, 2.07], "M2.5": [2.5, 3.39], M3: [3, 5.03], M4: [4, 8.78], M5: [5, 14.2], M6: [6, 20.1] };   // [公称直径, 应力截面积 mm²]
+const TGRADE = { "4.8": 340, "8.8": 640, "10.9": 940, "12.9": 1100, "A2-70": 450 };   // 屈服 / 规定塑性延伸强度最低值 MPa（ISO 898-1、ISO 3506-1）
+const BEAR = { "608": 3.45, "6800": 1.72, "6900": 2.7, "6000": 4.75, "6001": 5.4 };    // 额定动载荷 kN，参考 SKF 样本
+function renderConn() {
+  // 横销
+  const tau = 4 * S.ptq * 1000 / (Math.PI * S.pd ** 2 * S.pD), sfp = 0.5 * MAT[S.mpin2] / tau;
+  const F = S.ptq * 1000 / (2 * S.prc), p = F / (S.pd * S.pl), sfh = MAT[S.mhub] / p;
+  const kk = (v, t) => !Number.isFinite(v) ? null : v >= t ? "good" : v >= 1 ? "warn" : "bad";
+  const tg = S.tgSF > 0 ? S.tgSF : 1.5;
+  tiles($("#pin-tiles"), [
+    { k: "横销剪应力 τ", v: fmt(tau, 1), u: "MPa", s: `Ø${fmtIn(S.pd)} 销穿 Ø${fmtIn(S.pD)} 轴，双剪` },
+    { k: "横销安全系数", v: fmt(sfp, 2), u: "×", key: 1, s: `${S.mpin2}，许用 0.5σs`, pill: kk(sfp, tg) && pill(kk(sfp, tg), kk(sfp, tg) === "good" ? "合格" : kk(sfp, tg) === "warn" ? "偏低" : "不足") },
+    { k: "轮毂槽承压 p", v: fmt(p, 1), u: "MPa", s: `每侧 ${fmt(F, 1)} N，承压面 ${fmtIn(S.pd)} × ${fmtIn(S.pl)} mm` },
+    { k: "轮毂承压安全系数", v: fmt(sfh, 2), u: "×", s: `${S.mhub}（${MAT[S.mhub]} MPa）`, pill: kk(sfh, tg) && pill(kk(sfh, tg), kk(sfh, tg) === "good" ? "合格" : kk(sfh, tg) === "warn" ? "偏低，槽口会被压塌" : "不足，槽口会被压塌") },
+  ]);
+  // 螺纹
+  const tq = sz => { const [d, As] = THREAD[sz], Fp = S.tpct / 100 * TGRADE[S.tgr] * As; return { d, As, Fp, T: S.tk * Fp * d / 1000 }; };
+  const cur = tq(S.tsz);
+  tiles($("#th-tiles"), [
+    { k: "预紧力", v: fmt(cur.Fp, 0), u: "N", s: `${S.tsz} · ${S.tgr} 级 · 应力截面积 ${cur.As} mm² · ${fmtIn(S.tpct)}% 屈服` },
+    { k: "拧紧扭矩", v: fmt(cur.T, 2), u: "N·m", key: 1, s: `= ${fmt(cur.T * 1000 / 98.0665, 1)} kgf·cm，K = ${fmtIn(S.tk)}` },
+  ]);
+  $("#th-sub").textContent = `${S.tgr} 级，${fmtIn(S.tpct)}% 屈服预紧，K = ${fmtIn(S.tk)}。单位：预紧力 N，扭矩 N·m（括号内 kgf·cm）`;
+  const t = el("table", "data"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+  for (const h of ["规格", "应力截面积 mm²", "预紧力", "拧紧扭矩"]) hr.append(el("th", null, h));
+  for (const sz of Object.keys(THREAD)) { const r = tq(sz), tr = tb.insertRow(); if (sz === S.tsz) tr.className = "on"; tr.append(el("td", null, sz), el("td", null, String(r.As)), el("td", null, fmt(r.Fp, 0)), el("td", null, `${fmt(r.T, 2)}（${fmt(r.T * 1000 / 98.0665, 1)}）`)); }
+  $("#th-table").replaceChildren(t);
+  // 轴承
+  const Cn = (S.bpre === "custom" ? S.bC : BEAR[S.bpre]) * 1000, P = S.bfd * Math.max(S.bfr, 0.56 * S.bfr + 1.6 * S.bfa);
+  const L10 = (Cn / P) ** 3 * 1e6, rpm = S.bspd * 1000 / 60 / (Math.PI * S.tire / 1000), hrs = L10 / rpm / 60, km = L10 * Math.PI * S.tire / 1e6;
+  tiles($("#br-tiles"), [
+    { k: "当量动载荷 P", v: fmt(P, 1), u: "N", s: `C = ${fmt(Cn / 1000, 2)} kN${S.bpre === "custom" ? "（自定义）" : `（${S.bpre}，参考 SKF 样本）`}` },
+    { k: "L10 寿命", v: !Number.isFinite(L10) ? "—" : L10 >= 1e12 ? "> 10¹²" : L10 >= 1e9 ? fmt(L10 / 1e9, 1) + " × 10⁹" : fmt(L10 / 1e6, 1) + " × 10⁶", u: "转", s: `90% 的轴承能达到的转数` },
+    { k: "折合行驶里程", v: km >= 10000 ? "> 10000" : fmt(km, 0), u: "km", key: 1, s: `轮径 ${fmtIn(S.tire)} mm；平均 ${fmtIn(S.bspd)} km/h 约 ${hrs >= 10000 ? "> 10000" : fmt(hrs, 0)} 小时` },
+  ]);
+}
+
 /* ========== 转矩流 · 载荷工况 ========== */
 function torqueFlow() {
   const R1 = S.spur / S.pinion, i = S.internal, r = S.tire / 2000, four = S.swheels === 4;
@@ -1457,6 +2136,14 @@ function clean(p) {   // 只保留已知参数，类型不对的用默认值
   for (const k of ["mpin", "mspur"]) if (!(o[k] in MAT)) o[k] = DEF[k];
   if (!MATERIALS.some(m => m[0] === o.mshaft && !m[2])) o.mshaft = DEF.mshaft;
   if (!MATERIALS.some(m => m[0] === o.mcs && !m[2])) o.mcs = DEF.mcs;
+  if (!MATERIALS.some(m => m[0] === o.mpin2 && !m[2])) o.mpin2 = DEF.mpin2;
+  if (!(o.mhub in MAT)) o.mhub = DEF.mhub;
+  for (const k of ["g1mat", "g2mat", "g3mat"]) if (!(o[k] in MAT)) o[k] = DEF[k];
+  for (const k of ["g1t", "g2t", "g3t"]) if (!["spur", "bevel"].includes(o[k])) o[k] = DEF[k];
+  if (!["spur", "diff", "custom"].includes(o.gsrc)) o.gsrc = DEF.gsrc;
+  if (!["f", "r"].includes(o.sax)) o.sax = DEF.sax;
+  for (const k of ["mb", "rv"]) { try { JSON.parse(o[k]); } catch (e) { o[k] = DEF[k]; } if (o[k].length > 100000) o[k] = DEF[k]; }
+  for (const [k, ok] of [["tsz", THREADS_OK], ["tgr", GRADES_OK], ["bpre", BEARS_OK]]) if (!ok.includes(o[k])) o[k] = DEF[k];
   if (!["pin", "spur", "custom"].includes(o.lobj)) o.lobj = DEF.lobj;
   if (!["pk", "min"].includes(o.dbasis)) o.dbasis = DEF.dbasis;
   return o;
@@ -1497,12 +2184,14 @@ function cmpRows() {
   R("外侧轮最大转角（实际）", "°", x => x.st.act, 2, 0);
   R("最小转弯直径", "m", x => x.rout, 2, -1);
   R("设计峰值（主齿轴）", "N·m", x => x.flow.tsDes, 3, 0);
+  R("质量预算合计", "kg", x => { const S0 = S; S = x.S; try { const t = mbStats(mbRows()).tot; return t > 0 ? t / 1000 : NaN; } finally { S = S0; } }, 3, -1);
+  R("评审节点完成项", "项", x => { const S0 = S; S = x.S; try { return rvStats(rvMap()).done; } finally { S = S0; } }, 0, 1);
   R("最薄弱件 设计 SF", "×", x => x.flow.minSF, 2, 1);
   R("目标达成项数", "项", x => goalCount(goalRows(x, x.tests)).done, 0, 1);
   R("实测极速（最近）", "km/h", x => { const t = lastTest(x.tests, "v"); return t ? t.v : NaN; }, 1, 1);
   R("实测续航（最近）", "min", x => { const t = lastTest(x.tests, "run"); return t ? t.run : NaN; }, 1, 1);
   const seen = new Set();
-  for (const [blk, title] of [["drive", "动力 · 齿比"], ["geom", "齿轮几何"], ["combo", "齿数组合"], ["lewis", "齿轮强度"], ["shaft", "轴强度"], ["batt", "电池"], ["chassis", "车身"], ["steer", "转向"], ["torque", "转矩流"], ["goals", "目标"]]) {
+  for (const [blk, title] of [["drive", "动力 · 齿比"], ["geom", "齿轮几何"], ["combo", "齿数组合"], ["lewis", "齿轮强度"], ["shaft", "轴强度"], ["batt", "电池"], ["chassis", "车身"], ["susp", "悬架"], ["steer", "转向"], ["chain", "减速链"], ["torque", "转矩流"], ["cshaft", "中轴转速"], ["servo", "舵机"], ["pin", "横销"], ["thread", "螺纹"], ["bearing", "轴承"], ["goals", "目标"]]) {
     rows.push([`参数 · ${title}`, null]);
     for (const g of BLOCKS[blk]) for (const f of g.f) {
       if (f.type === "volt") { if (!seen.has("volt")) { seen.add("volt"); rows.push(["电池电压", "", x => voltTxt(x), null, 0, 0]); } continue; }
@@ -1646,7 +2335,7 @@ for (const id of ["#g-a", "#g-b", "#g-only"]) $(id).addEventListener("change", r
 $("#g-name").addEventListener("keydown", e => { if (e.key === "Enter") $("#g-save").click(); });
 
 /* ========== 总结 · BOM ========== */
-const TABNAME = { drive: "动力 · 齿比", gear: "齿轮设计", shaft: "轴强度", battery: "电池 · 续航", chassis: "车身 · 重心", steer: "转向 · 阿克曼", torque: "转矩流 · 载荷", goals: "目标 · 验证" };
+const TABNAME = { drive: "动力 · 齿比", gear: "齿轮设计", shaft: "轴强度", battery: "电池 · 续航", chassis: "车身 · 重心", steer: "转向 · 阿克曼", torque: "转矩流 · 载荷", goals: "目标 · 验证", conn: "轮端 · 连接", susp: "悬架 · 弹簧", mass: "质量预算", review: "评审 · 节点", parts: "零件库 · BOM 核查", summary: "总结 · BOM" };
 const PICKNAME = { mpin: "马达齿材料", mspur: "主齿材料", mshaft: "轴材料" };
 let BOM_TSV = "";
 function gearCheck(obj, mat) {
@@ -1701,11 +2390,11 @@ function renderSummary() {
 }
 
 /* ========== 刷新 ========== */
-const TABS = ["drive", "gear", "shaft", "torque", "battery", "chassis", "steer", "goals", "garage", "summary"];
+const TABS = ["drive", "gear", "shaft", "torque", "conn", "battery", "chassis", "mass", "susp", "steer", "goals", "review", "parts", "garage", "summary"];
 let TAB = "drive";
 function renderCharts() { if (TAB === "drive") renderDriveCharts(); }
 function render() {
-  renderDrive(); renderGeom(); renderCombo(); renderLewis(); renderShaft(); renderBatt(); renderChassis(); renderSteer(); renderTorque(); renderSummary(); renderGarage();
+  renderDrive(); renderGeom(); renderCombo(); renderLewis(); renderShaft(); renderBatt(); renderChassis(); renderSteer(); renderTorque(); renderCShaft(); renderServo(); renderConn(); renderChain(); renderSusp(); renderMass(); renderReview(); renderSummary(); renderGarage();
   renderCharts();
 }
 function update() { D = derive(); render(); sync(); save(); }
@@ -1783,6 +2472,7 @@ D = derive(); render(); sync();
 let first = location.hash.slice(1);
 if (!TABS.includes(first)) { try { first = localStorage.getItem(KEY + "-tab") || "drive"; } catch (e) { first = "drive"; } }
 showTab(first, false);
+renderParts();
 addEventListener("load", () => setTimeout(() => window.scrollTo(0, 0), 0));   // 带 #锚点打开时浏览器会滚到分页本身，标题会被顶栏挡住
 let rz, lastW = 0;
 if ("ResizeObserver" in window) new ResizeObserver(es => { const w = Math.round(es[0].contentRect.width); if (w === lastW) return; lastW = w; cancelAnimationFrame(rz); rz = requestAnimationFrame(renderCharts); }).observe($("main"));
