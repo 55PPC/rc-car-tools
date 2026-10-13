@@ -1581,7 +1581,7 @@ async function importParts(file) {
   let rows = [];
   if (/\.csv$/i.test(file.name)) {
     const buf = await file.arrayBuffer(); let txt = new TextDecoder("utf-8").decode(buf);
-    if (txt.includes("�")) { try { txt = new TextDecoder("gbk").decode(buf); } catch (e) {} }
+    if (txt.includes("\uFFFD")) { try { txt = new TextDecoder("gbk").decode(buf); } catch (e) {} }
     rows = tableToParts(parseCSV(txt.replace(/^﻿/, "")));
   } else if (/\.xls$/i.test(file.name)) { toast("旧版 .xls 格式无法直接读取，请在 Excel 里另存为 .xlsx 或 CSV 再导入"); return; }
   else {
@@ -1678,8 +1678,8 @@ $("#parts").addEventListener("click", e => {
     const esc = v => /[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v;
     const lines = [["车型", "零件细分", "零件名称", "规格", "直径", "长度", "材质", "表面处理", "数量", "自动提示", "核查结果"].join(",")];
     for (const r of PARTS.rows) lines.push([r.model, r.sub, r.name, r.spec, r.dia, r.len, r.mat, r.surf, r.qty, partFlags(r).map(f => f[1]).join("；"), RVS[(PREV[pKey(r)] || {}).s || ""]].map(v => esc(v ?? "")).join(","));
-    const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv" }), a = el("a"); a.href = URL.createObjectURL(blob); a.download = `bom-review-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); toast("已导出，Excel 可直接打开");
+    saveFile(`bom-review-${new Date().toISOString().slice(0, 10)}.csv`, "\uFEFF" + lines.join("\n"), "text/csv")
+      .then(r => toast(r === "saved" ? "已导出，Excel 可直接打开" : r === "declined" ? "已取消导出" : "上一个保存还在确认中，请稍后再试"));
   } else if (b.dataset.pdia) { S.sd = +b.dataset.pdia; update(); showTab("shaft", true); window.scrollTo(0, 0); toast(`轴径已带入 Ø${b.dataset.pdia}，请确认材料与扭矩`); }
   else if (b.dataset.pm) { S.lm = +b.dataset.pm; S.lobj = "custom"; S.lz = +b.dataset.pz; update(); showTab("gear", true); toast(`已带入 模数 ${b.dataset.pm}、${b.dataset.pz} 齿（自定义校核对象），请填扭矩`); }
 });
@@ -2158,6 +2158,21 @@ $("#goals").addEventListener("click", e => {
   }
 });
 
+/* 保存文件：在 claude.ai Artifact 里走 downloads 能力（会弹确认），其他地方（GitHub Pages、本地文件）直接下载 */
+async function saveFile(name, text, mime) {
+  try {
+    if (window.claude && typeof window.claude.use === "function") {
+      const dl = await window.claude.use("downloads");
+      if (dl) {
+        try { await dl.save({ filename: name, data: new Blob([text], { type: mime }) }); return "saved"; }
+        catch (e) { const c = e && e.code; if (c === "declined") return "declined"; if (c === "rate_limited") return "busy"; }
+      }
+    }
+  } catch (e) {}
+  const a = el("a"); a.href = URL.createObjectURL(new Blob([text], { type: mime })); a.download = name;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  return "saved";
+}
 /* ========== 车型存档 · 对比 ========== */
 const GKEY = "rc-calc-garage-v1";
 let GAR = [], GCUR = "", GCMP = "";
@@ -2335,10 +2350,9 @@ $("#garage").addEventListener("click", e => {
     }
   } else if (b.id === "g-export") {
     if (!GAR.length) { toast("还没有可导出的车型"); return; }
-    const blob = new Blob([JSON.stringify({ app: "rc-car-tools", v: 1, exported: new Date().toISOString(), cars: GAR }, null, 2)], { type: "application/json" });
-    const a = el("a"); a.href = URL.createObjectURL(blob); a.download = `rc-car-garage-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    toast(`已导出 ${GAR.length} 个车型`);
+    const n = GAR.length;
+    saveFile(`rc-car-garage-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ app: "rc-car-tools", v: 1, exported: new Date().toISOString(), cars: GAR }, null, 2), "application/json")
+      .then(r => toast(r === "saved" ? `已导出 ${n} 个车型` : r === "declined" ? "已取消导出" : "上一个保存还在确认中，请稍后再试"));
   } else if (b.id === "g-import") $("#g-file").click();
   else if (b.id === "g-copy") {
     const fallback = () => { try { const r = document.createRange(), sel = getSelection(); r.selectNodeContents($("#g-cmp")); sel.removeAllRanges(); sel.addRange(r); } catch (e) {} toast("已选中表格，按 ⌘C / Ctrl+C 复制"); };
