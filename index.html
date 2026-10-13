@@ -210,7 +210,26 @@ footer{font-size:12px;color:var(--muted);padding-block:8px 32px;border-top:1px s
 @container main (max-width:520px){.tile .v{font-size:30px}.mrow,.axis{grid-template-columns:minmax(70px,96px) minmax(0,1fr) auto}.mrow .val,.axis .pad{min-width:104px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 </style>
-<style>.between{justify-content:space-between}</style>
+<style>.between{justify-content:space-between}
+.tf{grid-column:1/-1;width:100%;font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line-2);border-radius:6px;background:var(--panel);color:var(--ink)}
+.tf:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:7px 14px;font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.gfoot{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px 8px}
+.cur{display:inline-block;margin-top:4px;font-size:12px;color:var(--muted)}
+.cur b{color:var(--ink);font-weight:600}
+table.data td.acts{white-space:nowrap}
+table.data td.acts .mini + .mini{margin-left:4px}
+.mini.danger{color:var(--bad-ink)}
+.mini.danger.arm{background:var(--bad);color:#fff;border-color:var(--bad)}
+table.data td.nm{text-align:left;font-weight:600;color:var(--ink);white-space:normal;min-width:6em}
+table.data td.nm small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+table.cmp td.l{white-space:normal}
+table.cmp tr.grp td{background:var(--sunk);font-size:12px;font-weight:600;color:var(--muted);text-align:left;letter-spacing:.06em}
+table.cmp tr.diff td.b{font-weight:600;color:var(--ink)}
+table.cmp td.up{color:var(--good-ink)} table.cmp td.dn{color:var(--bad-ink)} table.cmp td.ne{color:var(--muted)}
+.empty{color:var(--muted);font-size:13px;padding:10px 0}
+</style>
 <header class="top">
   <div class="wrap bar">
     <div class="brand">
@@ -229,6 +248,8 @@ footer{font-size:12px;color:var(--muted);padding-block:8px 32px;border-top:1px s
   <button role="tab" id="t-battery" data-tab="battery" aria-controls="battery" type="button"><span class="tl">电池 · 续航</span><small>电流余量 · 续航</small></button>
   <button role="tab" id="t-chassis" data-tab="chassis" aria-controls="chassis" type="button"><span class="tl">车身 · 重心</span><small>轴荷 · 侧翻</small></button>
   <button role="tab" id="t-steer" data-tab="steer" aria-controls="steer" type="button"><span class="tl">转向 · 阿克曼</span><small>内外轮转角 · 转弯半径</small></button>
+  <span class="sep" aria-hidden="true"></span>
+  <button role="tab" id="t-garage" data-tab="garage" aria-controls="garage" type="button"><span class="tl">车型存档 · 对比</span><small>保存参数 · 两车对比</small></button>
   <span class="sep" aria-hidden="true"></span>
   <button role="tab" id="t-summary" data-tab="summary" aria-controls="summary" type="button"><span class="tl">总结 · BOM</span><small>参数、选材与校核汇总</small></button>
 </nav>
@@ -312,6 +333,39 @@ footer{font-size:12px;color:var(--muted);padding-block:8px 32px;border-top:1px s
       <div class="tiles" id="st-tiles"></div>
       <div class="card"><h4>俯视示意（向左转）</h4><p class="sub" id="st-sub"></p><figure id="st-fig"></figure></div>
       <div class="card"><h4>各转角下的外侧轮转角</h4><p class="sub">理想值按阿克曼条件 cot δo − cot δi = 主销间距 / 轴距；实际值按转向臂 + 拉杆几何求解</p><div class="scroll" id="st-table"></div><div id="st-warn"></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="garage" class="tab" role="tabpanel" aria-labelledby="t-garage" hidden>
+  <div class="blk"><h2>车型存档<span>把当前所有页面的参数存成一个车型，随时载入</span></h2>
+    <div class="inputs">
+      <div class="group"><h3>保存当前参数</h3>
+        <div class="field"><label for="g-name">车型名称</label><span></span><input class="tf" id="g-name" type="text" maxlength="40" placeholder="例如：1/10 短卡 V1" autocomplete="off"></div>
+        <div class="field"><label for="g-note">备注（可选）</label><span></span><input class="tf" id="g-note" type="text" maxlength="120" placeholder="例如：换 17T 马达齿，实测 52 km/h" autocomplete="off"></div>
+        <div class="gfoot"><button class="btn" id="g-save" type="button">保存为车型</button></div>
+        <div class="hint" id="g-cur"></div>
+      </div>
+      <div class="group"><h3>备份与转移</h3>
+        <div class="gfoot"><button class="ghost" id="g-export" type="button">导出存档 (.json)</button><button class="ghost" id="g-import" type="button">导入存档</button><input id="g-file" type="file" accept=".json,application/json" hidden></div>
+        <div class="hint">存档保存在当前浏览器里，换电脑、换浏览器或清理网站数据都会丢失。重要的车型请导出备份；导入时同名车型会被覆盖，其余保留。</div>
+      </div>
+    </div>
+    <div class="results">
+      <div class="card"><h4>已保存的车型</h4><p class="sub">载入后，所有计算页都会换成该车型的参数</p><div class="scroll" id="g-list"></div></div>
+    </div>
+  </div>
+  <div class="blk"><h2>车型对比<span>两套参数及计算结果并排比较</span></h2>
+    <div class="inputs">
+      <div class="group"><h3>选择车型</h3>
+        <div class="field"><label for="g-a">车型 A（基准）</label><span></span><select id="g-a" class="tf"></select></div>
+        <div class="field"><label for="g-b">车型 B</label><span></span><select id="g-b" class="tf"></select></div>
+        <div class="field"><label for="g-only">只显示不同的项</label><input id="g-only" type="checkbox" checked></div>
+        <div class="hint">差值 = B − A。结果项按“越高越好 / 越低越好”着色：绿色表示 B 更好，红色表示 B 更差；参数项不着色。</div>
+      </div>
+    </div>
+    <div class="results">
+      <div class="card"><div class="row-flex between"><h4>对比表</h4><button class="mini" id="g-copy" type="button">复制表格</button></div><p class="sub" id="g-cmp-sub"></p><div class="scroll" id="g-cmp"></div></div>
     </div>
   </div>
 </section>
@@ -1089,6 +1143,193 @@ function renderSteer() {
   drawSteer(r);
 }
 
+/* ========== 车型存档 · 对比 ========== */
+const GKEY = "rc-calc-garage-v1";
+let GAR = [], GCUR = "", GCMP = "";
+try { const g = JSON.parse(localStorage.getItem(GKEY) || "null"); if (g && Array.isArray(g.cars)) GAR = g.cars.filter(c => c && typeof c.name === "string" && c.params && typeof c.params === "object"); } catch (e) {}
+try { GCUR = localStorage.getItem(KEY + "-car") || ""; } catch (e) {}
+const gSave = () => { try { localStorage.setItem(GKEY, JSON.stringify({ v: 1, cars: GAR })); localStorage.setItem(KEY + "-car", GCUR); } catch (e) { toast("浏览器不允许保存，请先导出备份"); } };
+function clean(p) {   // 只保留已知参数，类型不对的用默认值
+  const o = Object.assign({}, DEF);
+  for (const k in DEF) if (p && typeof p[k] === typeof DEF[k] && (typeof p[k] !== "number" || Number.isFinite(p[k]))) o[k] = p[k];
+  for (const k of ["mpin", "mspur"]) if (!(o[k] in MAT)) o[k] = DEF[k];
+  if (!MATERIALS.some(m => m[0] === o.mshaft && !m[2])) o.mshaft = DEF.mshaft;
+  if (!["pin", "spur", "custom"].includes(o.lobj)) o.lobj = DEF.lobj;
+  return o;
+}
+const sameParams = (a, b) => Object.keys(DEF).every(k => typeof DEF[k] === "number" ? Math.abs(a[k] - b[k]) < 1e-9 : a[k] === b[k]);
+/* 用一套参数算出全部结果（临时替换全局 S） */
+function metricsFor(p) {
+  const keep = S, keepD = D; S = clean(p);
+  try {
+    const d = derive(); D = d;
+    const gp = gearCheck("pin", S.mpin), gs = gearCheck("spur", S.mspur), tau = C.tau(S.st, S.sd, S.si), st = steerCalc(S.sdi), tot = S.cf + S.cr;
+    return { S, d, gp, gs, tau, ssf: 0.5 * MAT[S.mshaft] / tau, st, tot, imax: C.maxCur(S.cap, S.crate), rg: C.rollG(S.tw, S.ch),
+      rout: (S.wb / Math.sin(st.ideal * RAD) + (S.tw - S.kp) / 2) * 2 / 1000 };
+  } finally { S = keep; D = keepD; }
+}
+/* 对比行：[标签, 单位, 取值函数, 小数位, 方向(1 越高越好 / -1 越低越好 / 0 参数)] */
+const voltTxt = x => x.S.vmode === "v" ? `${fmtIn(x.S.volt)} V` : `${x.S.cells}S ${x.S.vmode === "f" ? "满电" : "标称"}`;
+function cmpRows() {
+  const rows = [["结果", null]];
+  const R = (l, u, f, dp, dir) => rows.push([l, u, f, dp, dir, 1]);
+  R("带载估算极速", "km/h", x => x.d.vmax, 1, 1);
+  R("空载理论极速", "km/h", x => x.d.vmax0, 1, 1);
+  R("总减速比 FDR", ": 1", x => x.d.fdr, 3, 0);
+  R("Rollout", "mm", x => x.d.roll, 2, 0);
+  R("地面推力", "N", x => x.d.F, 1, 1);
+  R("加速度（抓地限制后）", "m/s²", x => x.d.a, 2, 1);
+  R("0 → 设定速度 时间", "s", x => x.d.tAcc, 2, -1);
+  R("马达齿 安全系数", "×", x => MAT[x.S.mpin] / C.lewis(x.gp.T, x.S.lm, x.gp.z, x.S.lb, x.S.lk), 2, 1);
+  R("主齿 安全系数", "×", x => MAT[x.S.mspur] / C.lewis(x.gs.T, x.S.lm, x.gs.z, x.S.lb, x.S.lk), 2, 1);
+  R("轴 剪应力", "MPa", x => x.tau, 1, -1);
+  R("轴 安全系数", "×", x => x.ssf, 2, 1);
+  R("续航估算", "min", x => C.runtime(x.S.cap, x.S.avg), 1, 1);
+  R("峰值电流 / 电池额定", "%", x => x.S.cur / x.imax * 100, 0, -1);
+  R("总重", "kg", x => x.tot, 2, 0);
+  R("前轴荷", "%", x => x.S.cf / x.tot * 100, 1, 0);
+  R("侧翻临界横向加速度", "g", x => x.rg, 2, 1);
+  R("阿克曼百分比", "%", x => x.st.pct, 0, 0);
+  R("外侧轮最大转角（实际）", "°", x => x.st.act, 2, 0);
+  R("最小转弯直径", "m", x => x.rout, 2, -1);
+  const seen = new Set();
+  for (const [blk, title] of [["drive", "动力 · 齿比"], ["geom", "齿轮几何"], ["combo", "齿数组合"], ["lewis", "齿轮强度"], ["shaft", "轴强度"], ["batt", "电池"], ["chassis", "车身"], ["steer", "转向"]]) {
+    rows.push([`参数 · ${title}`, null]);
+    for (const g of BLOCKS[blk]) for (const f of g.f) {
+      if (f.type === "volt") { if (!seen.has("volt")) { seen.add("volt"); rows.push(["电池电压", "", x => voltTxt(x), null, 0, 0]); } continue; }
+      if (!f.k || seen.has(f.k)) continue;
+      seen.add(f.k);
+      if (f.type === "seg") rows.push([f.l, "", x => (f.opts.find(o => o[0] === x.S[f.k]) || [, x.S[f.k]])[1], null, 0, 0]);
+      else if (f.type === "sel") rows.push([f.l, "", x => x.S[f.k], null, 0, 0]);
+      else rows.push([f.l, f.u || "", x => x.S[f.k], 4, 0, 0]);
+    }
+  }
+  return rows;
+}
+const carById = id => GAR.find(c => c.id === id);
+const optLabel = id => id === "@cur" ? "当前参数（未保存）" : (carById(id) || {}).name;
+function fmtTime(t) { try { return new Date(t).toLocaleString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
+function renderGarage() {
+  // 当前状态
+  const cur = GAR.find(c => c.name === GCUR), host = $("#g-cur");
+  host.replaceChildren();
+  if (cur) host.append(document.createTextNode("当前载入："), el("b", null, cur.name), document.createTextNode(sameParams(clean(cur.params), S) ? "（未修改）" : "（参数已修改，可再次保存覆盖）"));
+  else host.textContent = GAR.length ? "当前参数还没有存成车型" : "还没有存档。调好参数后在这里起个名字保存。";
+  $("#g-name").placeholder = cur ? `留空 = 覆盖「${cur.name}」` : "例如：1/10 短卡 V1";
+  // 列表
+  const L = $("#g-list");
+  if (!GAR.length) L.replaceChildren(el("div", "empty", "暂无车型。"));
+  else {
+    const t = el("table", "data"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+    for (const h of ["车型", "极速", "FDR", "总重", "阿克曼", "保存时间", ""]) hr.append(el("th", null, h));
+    for (const c of GAR) {
+      const x = metricsFor(c.params), tr = tb.insertRow(); if (c.name === GCUR) tr.className = "on";
+      const nm = el("td", "nm", c.name); if (c.note) nm.append(el("small", null, c.note));
+      const acts = el("td", "acts");
+      for (const [a, txt, cls] of [["load", "载入"], ["over", "覆盖"], ["del", "删除", " danger"]]) { const b = el("button", "mini" + (cls || ""), txt); b.type = "button"; b.dataset.g = a; b.dataset.id = c.id; acts.append(b); }
+      tr.append(nm, el("td", null, fmt(x.d.vmax, 1) + " km/h"), el("td", null, fmt(x.d.fdr, 2)), el("td", null, fmt(x.tot, 2) + " kg"), el("td", null, fmt(x.st.pct, 0) + "%"), el("td", null, fmtTime(c.t)), acts);
+    }
+    L.replaceChildren(t);
+  }
+  // 对比选择
+  const ids = ["@cur", ...GAR.map(c => c.id)];
+  for (const [sel, fb] of [["#g-a", GAR[0] ? GAR[0].id : "@cur"], ["#g-b", "@cur"]]) {
+    const s = $(sel), v = ids.includes(s.value) ? s.value : fb;
+    s.replaceChildren(...ids.map(id => { const o = el("option", null, optLabel(id)); o.value = id; return o; }));
+    s.value = v;
+  }
+  renderCompare();
+}
+function renderCompare() {
+  const ia = $("#g-a").value, ib = $("#g-b").value, only = $("#g-only").checked;
+  const pa = ia === "@cur" ? S : (carById(ia) || {}).params, pb = ib === "@cur" ? S : (carById(ib) || {}).params;
+  const out = $("#g-cmp");
+  if (!pa || !pb) { out.replaceChildren(el("div", "empty", "请选择两个车型")); GCMP = ""; return; }
+  const A = metricsFor(pa), B = metricsFor(pb), na = optLabel(ia), nb = optLabel(ib);
+  $("#g-cmp-sub").textContent = ia === ib ? "A 和 B 是同一个，请换一个对比对象" : `A = ${na}，B = ${nb}`;
+  const t = el("table", "data cmp"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+  for (const h of ["项目", "A", "B", "差值 (B−A)", "变化"]) hr.append(el("th", null, h));
+  const tsv = [["项目", "单位", na, nb, "差值", "变化"].join("\t")];
+  let grp = null, nDiff = 0;
+  for (const r of cmpRows()) {
+    if (r[1] === null) { grp = r[0]; continue; }
+    const [lab, u, f, dp, dir, isRes] = r, va = f(A), vb = f(B);
+    const num = typeof va === "number" && typeof vb === "number";
+    const diff = num ? (Math.abs(vb - va) > 1e-9 * Math.max(1, Math.abs(va))) && !(Number.isNaN(va) && Number.isNaN(vb)) : va !== vb;
+    if (diff) nDiff++;
+    if (only && !diff) continue;
+    if (grp) { const g = tb.insertRow(); g.className = "grp"; const td = el("td", null, grp); td.colSpan = 5; g.append(td); grp = null; }
+    const show = v => typeof v === "number" ? (dp === 4 ? fmtIn(v) : fmt(v, dp)) : (v ?? "—");
+    const tr = tb.insertRow(); if (diff) tr.className = "diff";
+    let dTxt = "", pTxt = "", cls = "ne";
+    if (num && diff && Number.isFinite(va) && Number.isFinite(vb)) {
+      const dv = vb - va; dTxt = (dv > 0 ? "+" : "") + (dp === 4 ? fmtIn(+dv.toFixed(4)) : fmt(dv, dp));
+      pTxt = va !== 0 ? (dv > 0 ? "+" : "") + fmt(dv / Math.abs(va) * 100, 1) + "%" : "";
+      if (dir) cls = dv * dir > 0 ? "up" : "dn";
+    } else if (diff) dTxt = "不同";
+    tr.append(el("td", "l", lab + (u && ![": 1", "×"].includes(u) && !lab.includes(u) ? `（${u}）` : "")), el("td", null, show(va)), el("td", "b", show(vb)), el("td", cls, dTxt), el("td", cls, pTxt));
+    tsv.push([lab, u, show(va), show(vb), dTxt, pTxt].join("\t"));
+  }
+  if (!tb.rows.length) tb.insertRow().append(Object.assign(el("td", "ne", "两个车型的参数和结果完全相同"), { colSpan: 5 }));
+  out.replaceChildren(t);
+  if (ia !== ib) $("#g-cmp-sub").textContent += ` · ${nDiff} 项不同`;
+  GCMP = tsv.join("\n");
+}
+function gUpsert(name, note) {
+  const now = Date.now(), ex = GAR.find(c => c.name === name);
+  if (ex) { ex.params = Object.assign({}, S); ex.t = now; if (note) ex.note = note; }
+  else GAR.push({ id: "c" + now.toString(36) + Math.random().toString(36).slice(2, 6), name, note, t: now, params: Object.assign({}, S) });
+  GCUR = name; gSave(); renderGarage();
+  return !!ex;
+}
+let armT;
+$("#garage").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.id === "g-save") {
+    const cur = GAR.find(c => c.name === GCUR), name = $("#g-name").value.trim() || (cur ? cur.name : "");
+    if (!name) { $("#g-name").focus(); toast("请先填写车型名称"); return; }
+    const ov = gUpsert(name, $("#g-note").value.trim());
+    $("#g-name").value = ""; $("#g-note").value = "";
+    toast(ov ? `已覆盖「${name}」` : `已保存「${name}」`);
+  } else if (b.dataset.g) {
+    const c = carById(b.dataset.id); if (!c) return;
+    if (b.dataset.g === "load") { S = clean(c.params); GCUR = c.name; gSave(); for (const f of document.querySelectorAll(".field.bad")) f.classList.remove("bad"); update(); toast(`已载入「${c.name}」`); }
+    else if (b.dataset.g === "over") { c.params = Object.assign({}, S); c.t = Date.now(); GCUR = c.name; gSave(); renderGarage(); toast(`已用当前参数覆盖「${c.name}」`); }
+    else if (b.dataset.g === "del") {
+      if (!b.classList.contains("arm")) { for (const x of document.querySelectorAll(".mini.arm")) { x.classList.remove("arm"); x.textContent = "删除"; } b.classList.add("arm"); b.textContent = "确认删除"; clearTimeout(armT); armT = setTimeout(() => { b.classList.remove("arm"); b.textContent = "删除"; }, 3000); return; }
+      GAR = GAR.filter(x => x !== c); if (GCUR === c.name) GCUR = ""; gSave(); renderGarage(); toast(`已删除「${c.name}」`);
+    }
+  } else if (b.id === "g-export") {
+    if (!GAR.length) { toast("还没有可导出的车型"); return; }
+    const blob = new Blob([JSON.stringify({ app: "rc-car-tools", v: 1, exported: new Date().toISOString(), cars: GAR }, null, 2)], { type: "application/json" });
+    const a = el("a"); a.href = URL.createObjectURL(blob); a.download = `rc-car-garage-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast(`已导出 ${GAR.length} 个车型`);
+  } else if (b.id === "g-import") $("#g-file").click();
+  else if (b.id === "g-copy") {
+    const fallback = () => { try { const r = document.createRange(), sel = getSelection(); r.selectNodeContents($("#g-cmp")); sel.removeAllRanges(); sel.addRange(r); } catch (e) {} toast("已选中表格，按 ⌘C / Ctrl+C 复制"); };
+    try { navigator.clipboard.writeText(GCMP).then(() => toast("已复制，可直接粘贴到 Excel / WPS"), fallback); } catch (e) { fallback(); }
+  }
+});
+$("#g-file").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+  f.text().then(txt => {
+    const j = JSON.parse(txt), cars = Array.isArray(j) ? j : j && j.cars;
+    if (!Array.isArray(cars)) throw 0;
+    let n = 0;
+    for (const c of cars) {
+      if (!c || typeof c.name !== "string" || !c.name.trim() || !c.params || typeof c.params !== "object") continue;
+      const p = clean(c.params), ex = GAR.find(x => x.name === c.name.trim());
+      const rec = { id: ex ? ex.id : "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: c.name.trim().slice(0, 40), note: typeof c.note === "string" ? c.note.slice(0, 120) : "", t: Number.isFinite(c.t) ? c.t : Date.now(), params: p };
+      if (ex) Object.assign(ex, rec); else GAR.push(rec);
+      n++;
+    }
+    gSave(); renderGarage(); toast(n ? `已导入 ${n} 个车型` : "文件里没有可用的车型");
+  }).catch(() => toast("导入失败：不是有效的存档文件"));
+});
+for (const id of ["#g-a", "#g-b", "#g-only"]) $(id).addEventListener("change", renderCompare);
+$("#g-name").addEventListener("keydown", e => { if (e.key === "Enter") $("#g-save").click(); });
+
 /* ========== 总结 · BOM ========== */
 const TABNAME = { drive: "动力 · 齿比", gear: "齿轮设计", shaft: "轴强度", battery: "电池 · 续航", chassis: "车身 · 重心", steer: "转向 · 阿克曼" };
 const PICKNAME = { mpin: "马达齿材料", mspur: "主齿材料", mshaft: "轴材料" };
@@ -1145,11 +1386,11 @@ function renderSummary() {
 }
 
 /* ========== 刷新 ========== */
-const TABS = ["drive", "gear", "shaft", "battery", "chassis", "steer", "summary"];
+const TABS = ["drive", "gear", "shaft", "battery", "chassis", "steer", "garage", "summary"];
 let TAB = "drive";
 function renderCharts() { if (TAB === "drive") renderDriveCharts(); }
 function render() {
-  renderDrive(); renderGeom(); renderCombo(); renderLewis(); renderShaft(); renderBatt(); renderChassis(); renderSteer(); renderSummary();
+  renderDrive(); renderGeom(); renderCombo(); renderLewis(); renderShaft(); renderBatt(); renderChassis(); renderSteer(); renderSummary(); renderGarage();
   renderCharts();
 }
 function update() { D = derive(); render(); sync(); save(); }
@@ -1227,6 +1468,7 @@ D = derive(); render(); sync();
 let first = location.hash.slice(1);
 if (!TABS.includes(first)) { try { first = localStorage.getItem(KEY + "-tab") || "drive"; } catch (e) { first = "drive"; } }
 showTab(first, false);
+addEventListener("load", () => setTimeout(() => window.scrollTo(0, 0), 0));   // 带 #锚点打开时浏览器会滚到分页本身，标题会被顶栏挡住
 let rz, lastW = 0;
 if ("ResizeObserver" in window) new ResizeObserver(es => { const w = Math.round(es[0].contentRect.width); if (w === lastW) return; lastW = w; cancelAnimationFrame(rz); rz = requestAnimationFrame(renderCharts); }).observe($("main"));
 </script>
