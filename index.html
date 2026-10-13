@@ -2,7 +2,7 @@
 <title>RC 遥控车研发计算工具</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
 <style>
 /* Layout: sticky header + module tabs; each block = parameter column (left) + live results (right); one column on phones */
 :root{
@@ -496,8 +496,8 @@ table.data tr.sub td{color:var(--muted);font-size:12px}
 </section>
 
 <section id="parts" class="tab" role="tabpanel" aria-labelledby="t-parts" hidden>
-  <div class="sumhead"><h2>零件库 · BOM 核查</h2><p>导入历史 BOM（.xlsx / .csv），按零件名称、车型、材质检索，自动提示可疑的材料写法，并逐条或按材料写法批量标记核查结果。旧 BOM 只作参考：未核查的数据不会进入任何计算，只有点「带入」才会把尺寸填进计算页。</p></div>
-  <div class="row-flex" style="margin:4px 0 12px"><button class="btn" id="pt-import" type="button">导入 BOM</button><button class="ghost" id="pt-export" type="button">导出核查结果 (.csv)</button><button class="ghost" id="pt-clear" type="button">清空零件库</button><input id="pt-file" type="file" accept=".xlsx,.xls,.csv,text/csv" hidden><span class="hint" id="pt-src"></span></div>
+  <div class="sumhead"><h2>零件库 · BOM 核查</h2><p>导入历史 BOM（.xlsx / .csv，离线可用），按零件名称、车型、材质检索，自动提示可疑的材料写法，并逐条或按材料写法批量标记核查结果。旧 BOM 只作参考：未核查的数据不会进入任何计算，只有点「带入」才会把尺寸填进计算页。</p></div>
+  <div class="row-flex" style="margin:4px 0 12px"><button class="btn" id="pt-import" type="button">导入 BOM</button><button class="ghost" id="pt-export" type="button">导出核查结果 (.csv)</button><button class="ghost" id="pt-clear" type="button">清空零件库</button><input id="pt-file" type="file" accept=".xlsx,.csv,text/csv" hidden><span class="hint" id="pt-src"></span></div>
   <div class="tiles" id="pt-tiles"></div>
   <div class="card"><h4>材料写法汇总</h4><p class="sub">相同写法合并显示。可以在这里给整类写法批量标记核查结果，再到下方逐条调整。</p><div class="scroll" id="pt-mats"></div></div>
   <div class="card" style="margin-top:14px"><h4>零件明细</h4>
@@ -1535,13 +1535,47 @@ function tableToParts(aoa) {
   }
   return out;
 }
-let XLSXP = null;
-function loadXLSX() {
-  if (window.XLSX) return Promise.resolve(window.XLSX);
-  return XLSXP ||= new Promise((res, rej) => {
-    const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
-    sc.onload = () => window.XLSX ? res(window.XLSX) : rej(); sc.onerror = () => { XLSXP = null; rej(); }; document.head.append(sc);
-  });
+/* 内置 xlsx 读取：解析 zip 目录 + 浏览器自带 DecompressionStream 解压，不依赖外部组件 */
+async function readXlsx(buf) {
+  const dv = new DataView(buf), u8 = new Uint8Array(buf), td = new TextDecoder();
+  let eo = -1; for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 70000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eo = i; break; }
+  if (eo < 0) throw new Error("zip");
+  const n = dv.getUint16(eo + 10, true); let p = dv.getUint32(eo + 16, true); const files = {};
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error("zip");
+    const meth = dv.getUint16(p + 10, true), cs = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lo = dv.getUint32(p + 42, true);
+    files[td.decode(u8.subarray(p + 46, p + 46 + nl))] = { meth, cs, lo }; p += 46 + nl + xl + cl;
+  }
+  const get = async name => {
+    const f = files[name]; if (!f) return null;
+    const st = f.lo + 30 + dv.getUint16(f.lo + 26, true) + dv.getUint16(f.lo + 28, true), data = u8.subarray(st, st + f.cs);
+    if (f.meth === 0) return td.decode(data);
+    if (f.meth !== 8 || !("DecompressionStream" in window)) throw new Error("deflate");
+    return td.decode(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+  };
+  const xml = t => new DOMParser().parseFromString(t, "application/xml"), tags = (d, t) => [...d.getElementsByTagNameNS("*", t)];
+  const sst = []; const ss = await get("xl/sharedStrings.xml");
+  if (ss) for (const si of tags(xml(ss), "si")) sst.push(tags(si, "t").map(x => x.textContent).join(""));
+  const wbx = xml(await get("xl/workbook.xml") || ""), rels = xml(await get("xl/_rels/workbook.xml.rels") || "<r/>"), relMap = {};
+  for (const r of tags(rels, "Relationship")) relMap[r.getAttribute("Id")] = r.getAttribute("Target");
+  const sheets = [];
+  for (const sh of tags(wbx, "sheet")) {
+    const rid = sh.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id") || sh.getAttribute("r:id");
+    let tgt = relMap[rid] || ""; tgt = tgt.startsWith("/") ? tgt.slice(1) : "xl/" + tgt.replace(/^\.\//, "");
+    const txt = await get(tgt); if (!txt) continue;
+    const aoa = [];
+    for (const row of tags(xml(txt), "row")) {
+      const ri = (+row.getAttribute("r") || aoa.length + 1) - 1, arr = (aoa[ri] = []);
+      for (const c of tags(row, "c")) {
+        const ref = c.getAttribute("r") || "", col = [...ref.replace(/\d+/g, "")].reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+        const t = c.getAttribute("t"), v = tags(c, "v")[0], isT = tags(c, "t");
+        arr[col < 0 ? arr.length : col] = t === "s" ? (sst[+(v && v.textContent)] ?? "") : t === "inlineStr" ? isT.map(x => x.textContent).join("") : (v ? v.textContent : "");
+      }
+    }
+    for (let i = 0; i < aoa.length; i++) aoa[i] ||= [];
+    sheets.push({ name: sh.getAttribute("name"), aoa });
+  }
+  return sheets;
 }
 async function importParts(file) {
   let rows = [];
@@ -1549,10 +1583,10 @@ async function importParts(file) {
     const buf = await file.arrayBuffer(); let txt = new TextDecoder("utf-8").decode(buf);
     if (txt.includes("�")) { try { txt = new TextDecoder("gbk").decode(buf); } catch (e) {} }
     rows = tableToParts(parseCSV(txt.replace(/^﻿/, "")));
-  } else {
-    let X; try { X = await loadXLSX(); } catch (e) { toast("无法加载 Excel 解析组件（需要联网）。可在 Excel 里另存为 CSV 再导入"); return; }
-    let wb; try { wb = X.read(await file.arrayBuffer(), { type: "array" }); } catch (e) { toast("这个 Excel 文件无法读取，可能已损坏或不完整。请重新导出，或另存为 CSV 再试"); return; }
-    for (const nm of wb.SheetNames) { const r = tableToParts(X.utils.sheet_to_json(wb.Sheets[nm], { header: 1, defval: "", raw: false })); if (r.length > rows.length) rows = r; }
+  } else if (/\.xls$/i.test(file.name)) { toast("旧版 .xls 格式无法直接读取，请在 Excel 里另存为 .xlsx 或 CSV 再导入"); return; }
+  else {
+    let sheets; try { sheets = await readXlsx(await file.arrayBuffer()); } catch (e) { toast(String(e && e.message) === "deflate" ? "浏览器不支持解压，请另存为 CSV 再导入" : "这个 Excel 文件无法读取，可能已损坏或不完整。请重新导出，或另存为 CSV 再试"); return; }
+    for (const sh of sheets) { const r = tableToParts(sh.aoa); if (r.length > rows.length) rows = r; }
   }
   if (!rows.length) { toast("没找到零件表：需要含「零件名称」和「材质」列的表头"); return; }
   PARTS = { rows: rows.slice(0, 20000), src: file.name, t: Date.now() }; PLIM = 100;
