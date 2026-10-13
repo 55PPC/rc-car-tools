@@ -229,6 +229,23 @@ table.cmp tr.grp td{background:var(--sunk);font-size:12px;font-weight:600;color:
 table.cmp tr.diff td.b{font-weight:600;color:var(--ink)}
 table.cmp td.up{color:var(--good-ink)} table.cmp td.dn{color:var(--bad-ink)} table.cmp td.ne{color:var(--muted)}
 .empty{color:var(--muted);font-size:13px;padding:10px 0}
+.tgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 10px;padding-block:8px}
+.tgrid label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-2);min-width:0}
+.tgrid label.w2{grid-column:1/-1}
+.tgrid .tf{font-size:13px;padding:5px 8px}
+table.data td.st{white-space:nowrap;text-align:left}
+table.data td.src{white-space:normal;text-align:left;color:var(--muted);font-size:12px;min-width:14em}
+table.data td.lim{color:var(--muted);font-size:12px}
+#ts-table td.nm{min-width:11em}
+#tq-table td.nm{min-width:9.5em}
+#ts-table td.acts{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+#ts-table td.acts .mini + .mini{margin-left:0}
+table.data tr.sub td{color:var(--muted);font-size:12px}
+.badge{display:inline-block;padding:0 6px;border-radius:4px;font-size:11px;font-weight:600;line-height:1.7}
+.badge.std{color:var(--good-ink);background:color-mix(in srgb,var(--good) 14%,transparent)}
+.badge.typ{color:var(--warn-ink);background:color-mix(in srgb,var(--warn) 18%,transparent)}
+.badge.meas{color:var(--accent);background:var(--accent-soft)}
+.badge.th{color:var(--muted);background:var(--sunk)}
 </style>
 <header class="top">
   <div class="wrap bar">
@@ -245,10 +262,12 @@ table.cmp td.up{color:var(--good-ink)} table.cmp td.dn{color:var(--bad-ink)} tab
   <button role="tab" id="t-drive" data-tab="drive" aria-controls="drive" type="button"><span class="tl">动力 · 齿比</span><small>车速 · 推力 · 反推马达齿</small></button>
   <button role="tab" id="t-gear" data-tab="gear" aria-controls="gear" type="button"><span class="tl">齿轮设计</span><small>几何 · 齿数组合 · 强度选材</small></button>
   <button role="tab" id="t-shaft" data-tab="shaft" aria-controls="shaft" type="button"><span class="tl">轴强度</span><small>剪应力 · 轴径 · 选材</small></button>
+  <button role="tab" id="t-torque" data-tab="torque" aria-controls="torque" type="button"><span class="tl">转矩流 · 载荷</span><small>名义 / 峰值 · 逐件安全系数</small></button>
   <button role="tab" id="t-battery" data-tab="battery" aria-controls="battery" type="button"><span class="tl">电池 · 续航</span><small>电流余量 · 续航</small></button>
   <button role="tab" id="t-chassis" data-tab="chassis" aria-controls="chassis" type="button"><span class="tl">车身 · 重心</span><small>轴荷 · 侧翻</small></button>
   <button role="tab" id="t-steer" data-tab="steer" aria-controls="steer" type="button"><span class="tl">转向 · 阿克曼</span><small>内外轮转角 · 转弯半径</small></button>
   <span class="sep" aria-hidden="true"></span>
+  <button role="tab" id="t-goals" data-tab="goals" aria-controls="goals" type="button"><span class="tl">目标 · 验证</span><small>达标看板 · 实测记录</small></button>
   <button role="tab" id="t-garage" data-tab="garage" aria-controls="garage" type="button"><span class="tl">车型存档 · 对比</span><small>保存参数 · 两车对比</small></button>
   <span class="sep" aria-hidden="true"></span>
   <button role="tab" id="t-summary" data-tab="summary" aria-controls="summary" type="button"><span class="tl">总结 · BOM</span><small>参数、选材与校核汇总</small></button>
@@ -308,6 +327,21 @@ table.cmp td.up{color:var(--good-ink)} table.cmp td.dn{color:var(--bad-ink)} tab
   </div>
 </section>
 
+<section id="torque" class="tab" role="tabpanel" aria-labelledby="t-torque" hidden>
+  <div class="blk"><h2>转矩流<span>电机 → 齿轮 → 中轴 → 差速 → 半轴，名义载荷与峰值载荷分开</span></h2>
+    <div class="inputs" data-block="torque"></div>
+    <div class="results">
+      <div class="tiles" id="tq-tiles"></div>
+      <div class="card"><h4>逐级转矩与安全系数</h4><p class="sub" id="tq-sub"></p><div class="scroll" id="tq-table"></div>
+        <p class="note">名义 = 工作电流下的电机扭矩；电机峰值 = 峰值 / 堵转电流下的扭矩；抓地上限 = 轮胎打滑前地面能反传回来的最大扭矩（静态轴荷，未计加速载荷转移）；设计峰值按左侧「设计峰值取法」。转矩按无损传递计算（偏保守），差速器按开放式、前后扭矩按固定比例分配。名义 SF 不含冲击；设计 SF = 设计峰值 × 冲击系数（齿轮用「齿轮设计」页的动载系数 K，轴用「轴强度」页的冲击系数）。齿轮按 Lewis 弯曲强度，轴按扭转剪应力（许用 0.5σs）。</p></div>
+    </div>
+  </div>
+  <div class="blk"><h2>材料库<span>强度数据的来源与性质</span></h2>
+    <div class="inputs"><div class="group"><h3>说明</h3><div class="hint" style="padding-block:8px">「标准最低值」取自国标 / ISO 等标准规定的最低保证值，可直接用于校核；「典型值」是手册或厂商的常见值，同一牌号不同批次、状态差异大，正式定版前要换成供应商材料证明书上的数据。塑料无明显屈服点，取拉伸强度参考值，吸湿、温升后会明显下降。</div></div></div>
+    <div class="results"><div class="card"><div class="scroll" id="mat-table"></div></div></div>
+  </div>
+</section>
+
 <section id="battery" class="tab" role="tabpanel" aria-labelledby="t-battery" hidden>
   <div class="blk"><h2>电池 · 功率 · 续航</h2>
     <div class="inputs" data-block="batt"></div>
@@ -333,6 +367,42 @@ table.cmp td.up{color:var(--good-ink)} table.cmp td.dn{color:var(--bad-ink)} tab
       <div class="tiles" id="st-tiles"></div>
       <div class="card"><h4>俯视示意（向左转）</h4><p class="sub" id="st-sub"></p><figure id="st-fig"></figure></div>
       <div class="card"><h4>各转角下的外侧轮转角</h4><p class="sub">理想值按阿克曼条件 cot δo − cot δi = 主销间距 / 轴距；实际值按转向臂 + 拉杆几何求解</p><div class="scroll" id="st-table"></div><div id="st-warn"></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="goals" class="tab" role="tabpanel" aria-labelledby="t-goals" hidden>
+  <div class="blk"><h2>任务书目标<span>目标值随车型一起存档；填 0 表示不设该项</span></h2>
+    <div class="inputs" data-block="goals"></div>
+    <div class="results">
+      <div class="tiles" id="gl-tiles"></div>
+      <div class="card"><h4>达标看板</h4><p class="sub">有实测数据的项目按最近一次实测判定，否则按理论值判定。理论值与实测值分列，不互相覆盖。</p><div class="scroll" id="gl-table"></div></div>
+    </div>
+  </div>
+  <div class="blk"><h2>实测记录<span>记录样车实测数据，并用来校准理论模型</span></h2>
+    <div class="inputs">
+      <div class="group"><h3>新增一次实测</h3>
+        <div class="hint" id="ts-car" style="padding-top:6px"></div>
+        <div class="tgrid">
+          <label>日期<input class="tf" id="ts-date" type="date"></label>
+          <label>场地 / 路面<input class="tf" id="ts-place" type="text" maxlength="40" placeholder="例如：柏油停车场"></label>
+          <label>实测极速 km/h<input class="tf" id="ts-v" type="number" step="0.1" min="0" inputmode="decimal"></label>
+          <label>0 → 设定速度 s<input class="tf" id="ts-acc" type="number" step="0.01" min="0" inputmode="decimal"></label>
+          <label>实测续航 min<input class="tf" id="ts-run" type="number" step="0.1" min="0" inputmode="decimal"></label>
+          <label>最小转弯直径 m<input class="tf" id="ts-turn" type="number" step="0.01" min="0" inputmode="decimal"></label>
+          <label>电机温度 °C<input class="tf" id="ts-tm" type="number" step="1" inputmode="decimal"></label>
+          <label>电调温度 °C<input class="tf" id="ts-te" type="number" step="1" inputmode="decimal"></label>
+          <label>电池温度 °C<input class="tf" id="ts-tb" type="number" step="1" inputmode="decimal"></label>
+          <label>环境温度 °C<input class="tf" id="ts-ta" type="number" step="1" inputmode="decimal"></label>
+          <label class="w2">备注<input class="tf" id="ts-note" type="text" maxlength="120" placeholder="例如：GPS 测速，三次取最高；跑完电机烫手"></label>
+        </div>
+        <div class="gfoot"><button class="btn" id="ts-add" type="button">保存实测记录</button></div>
+        <div class="hint">保存时会同时记下当时的齿比、电压、KV、轮径、带载系数和对应的理论值，以后改了参数也能对照当时的理论值。只需填有测的项目。</div>
+      </div>
+    </div>
+    <div class="results">
+      <div class="tiles" id="ts-tiles"></div>
+      <div class="card"><h4>记录与理论对照</h4><p class="sub">偏差 = (实测 − 当时理论) ÷ 当时理论。实测带载系数 = 实测极速 ÷ 当时空载理论极速；反推平均电流 = 可用容量 ÷ 实测续航。</p><div class="scroll" id="ts-table"></div></div>
     </div>
   </div>
 </section>
@@ -395,7 +465,27 @@ const LEWIS_Y = [[12,.245],[13,.261],[14,.277],[15,.290],[16,.296],[17,.303],[18
 // 第三项 "铜齿"：只在齿轮强度里列出，轴强度不列
 const MATERIALS = [["PA66 尼龙",60],["PA66+30% 玻纤",150],["POM 赛钢",65],["铅黄铜 HPb59-1 / C3604",170,"铜齿"],["H62 黄铜（半硬）",250,"铜齿"],
   ["6061-T6 铝",275],["7075-T6 铝",500],
-  ["45# 钢（调质）",355],["40Cr（调质）",785],["钛合金 TC4",830]];
+  ["Q235（A3）",235],["1018 低碳钢（冷拉）",370],["SUM24L 易切削钢（冷拉）",415],
+  ["45# 钢（调质）",355],["40Cr（调质）",785],["65Mn（淬火回火）",785],["20CrMnTi（渗碳淬火）",850],["10.9 级合金钢（SCM435 等）",940],["钛合金 TC4",830]];
+/* 材料数据性质：std = 标准最低保证值，typ = 手册 / 常见典型值（需换成供应商数据） */
+const MATINFO = {
+  "PA66 尼龙": ["干态，注塑", "typ", "拉伸强度参考值；吸湿后明显下降"],
+  "PA66+30% 玻纤": ["干态，注塑", "typ", "拉伸强度参考值；吸湿、纤维取向影响大"],
+  "POM 赛钢": ["均聚 / 共聚", "typ", "拉伸强度参考值"],
+  "铅黄铜 HPb59-1 / C3604": ["半硬棒材", "typ", "参照 C36000 半硬棒材最低屈服值"],
+  "H62 黄铜（半硬）": ["1/2H", "typ", "半硬状态下限参考值"],
+  "6061-T6 铝": ["T6", "typ", "典型值 275；挤压材标准最低约 240"],
+  "7075-T6 铝": ["T6", "typ", "典型值约 500；注意应力腐蚀"],
+  "Q235（A3）": ["热轧", "std", "GB/T 700 屈服强度最低值（厚度 ≤ 16 mm）"],
+  "1018 低碳钢（冷拉）": ["冷拉", "typ", "AISI 1018 冷拉典型值；不能整体淬硬，渗碳只提高表面硬度"],
+  "SUM24L 易切削钢（冷拉）": ["冷拉", "typ", "参照 AISI 12L14 冷拉典型值；含铅硫，疲劳与韧性差，不宜用于交变扭矩件"],
+  "45# 钢（调质）": ["调质", "std", "按 GB/T 699 正火最低值 355 保守取；调质后实际更高，以热处理硬度换算或材证为准"],
+  "40Cr（调质）": ["调质", "std", "GB/T 3077 最低值"],
+  "65Mn（淬火回火）": ["淬火 + 中温回火", "std", "GB/T 1222 弹簧钢最低值；电镀后需除氢"],
+  "20CrMnTi（渗碳淬火）": ["渗碳淬火 + 低温回火", "std", "GB/T 3077 心部最低值（15 mm 试样）；齿面硬度另计"],
+  "10.9 级合金钢（SCM435 等）": ["淬火回火", "std", "ISO 898-1 规定塑性延伸强度最低值；用于螺栓 / 销"],
+  "钛合金 TC4": ["退火", "typ", "典型值，参照 Ti-6Al-4V 退火态"],
+};
 const C = {
   fdr: (p, s, i = 1) => s / p * i,
   motorRpm: (kv, v, lf = 1) => kv * v * lf,
@@ -471,6 +561,8 @@ const DEF = { kv: 3300, cells: 2, vmode: "n", volt: 7.4, lf: 0.85, pinion: 18, s
   lt: 0.5, lm: 1, lz: 13, lb: 6, lk: 2, st: 1, swheels: 4, simpact: 2, sd: 5, si: 0, ssf: 2, sl: 100,
   cap: 5000, crate: 50, avg: 20, cf: 1, cr: 1.1, wb: 260, tw: 190, ch: 40,
   kp: 160, sdi: 25, sra: 20, sbeta: 15,
+  ipk: 120, dbasis: "pk", fsplit: 50, csd: 6, csi: 0, mcs: "45# 钢（调质）",
+  tgV: 45, tgAcc: 0, tgRun: 10, tgCur: 80, tgMass: 2.2, tgFr: 45, tgFrTol: 5, tgTurn: 1.8, tgRollM: 1.2, tgSF: 1.5, tgTemp: 80,
   lobj: "pin", mpin: "铅黄铜 HPb59-1 / C3604", mspur: "POM 赛钢", mshaft: "45# 钢（调质）" };
 const KEY = "rc-calc-v1";
 let S = Object.assign({}, DEF), D = {};
@@ -480,8 +572,10 @@ try {
 } catch (e) {}
 const MAT = Object.fromEntries(MATERIALS.map(([n, ys]) => [n, ys]));
 for (const k of ["mpin", "mspur"]) if (!(S[k] in MAT)) S[k] = DEF[k];
+for (const k of ["mcs"]) if (!MATERIALS.some(m => m[0] === S[k] && !m[2])) S[k] = DEF[k];
 if (!MATERIALS.some(m => m[0] === S.mshaft && !m[2])) S.mshaft = DEF.mshaft;
 if (!["pin", "spur", "custom"].includes(S.lobj)) S.lobj = DEF.lobj;
+if (!["pk", "min"].includes(S.dbasis)) S.dbasis = DEF.dbasis;
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 const volts = () => S.vmode === "v" ? S.volt : S.cells * (S.vmode === "f" ? LIPO_F : LIPO_N);
 
@@ -527,14 +621,14 @@ const BLOCKS = {
       { type: "sel", k: "mpin", l: "马达齿材料", gear: 1 },
       { type: "sel", k: "mspur", l: "主齿材料", gear: 1 }] },
     { t: "齿轮受力", f: [
-    { k: "lt", l: "该齿轮承受扭矩", u: "N·m", step: 0.01, zero: 1, show: s => s.lobj === "custom", pull: [["马达齿", "pinionT"], ["主齿", "spurT"]], h: "可从「动力」页带入：马达齿 = 电机扭矩，主齿 = 电机扭矩 × 一级齿比" },
+    { k: "lt", l: "该齿轮承受扭矩", u: "N·m", step: 0.01, zero: 1, show: s => s.lobj === "custom", pull: [["马达齿", "pinionT"], ["主齿", "spurT"], ["马达齿设计峰值", "pinDes"], ["主齿设计峰值", "spurDes"]], h: "名义值取自「动力」页；设计峰值取自「转矩流」页（不含 K，K 在本页另乘）" },
     { k: "lm", l: "模数 m", u: "mm", step: 0.05, pre: [[0.529, "48P"], [0.6, "0.6"], [0.8, "0.8"], [1, "1.0"]] },
     { k: "lz", l: "齿数", u: "T", step: 1, int: 1, show: s => s.lobj === "custom" },
     { k: "lb", l: "齿宽", u: "mm", step: 0.5 },
     { k: "lk", l: "动载 / 冲击系数", u: "×", min: 1, max: 4, step: 0.1, sl: 1, h: "RC 落地、急加速冲击大，建议 1.5–3" }] }],
   shaft: [
     { t: "扭矩", f: [
-      { k: "st", l: "轴承受扭矩", u: "N·m", step: 0.05, zero: 1, pull: [["单根半轴扭矩", "axleT"]] },
+      { k: "st", l: "轴承受扭矩", u: "N·m", step: 0.05, zero: 1, pull: [["单根半轴扭矩", "axleT"], ["半轴设计峰值 × 冲击", "axleDes"]] },
       { k: "swheels", l: "驱动轮数", u: "个", step: 1, int: 1, pre: [[2, "两驱 2"], [4, "四驱 4"]] },
       { k: "simpact", l: "冲击系数", u: "×", step: 0.1, h: "带入值 = 轮总扭矩 ÷ 驱动轮数 × 冲击系数" }] },
     { t: "尺寸与材料", f: [
@@ -554,6 +648,31 @@ const BLOCKS = {
     { k: "wb", l: "轴距", u: "mm", step: 1 },
     { k: "tw", l: "轮距", u: "mm", step: 1 },
     { k: "ch", l: "重心高度", u: "mm", min: 10, max: 150, step: 1, sl: 1 }] }],
+  torque: [
+    { t: "载荷工况", f: [
+      { k: "ipk", l: "峰值 / 堵转电流", u: "A", step: 1, h: "取电调限流值或电机堵转电流中较小者；工作电流在「动力」页" },
+      { type: "seg", k: "dbasis", l: "设计峰值取法", opts: [["pk", "电机峰值（保守）"], ["min", "与抓地上限取小"]], h: "空中加速后落地、打滑瞬间，传动件仍可能承受接近电机峰值的扭矩，建议按电机峰值校核；取小只代表平地稳态" },
+      { k: "swheels", l: "驱动方式", u: "轮", step: 1, int: 1, pre: [[2, "后驱 2"], [4, "四驱 4"]], h: "与「轴强度」页共用" },
+      { k: "fsplit", l: "前轴扭矩分配", u: "%", min: 10, max: 90, step: 1, sl: 1, show: s => s.swheels === 4, h: "中央差速 / 固定分配比例，常见 50%" }] },
+    { t: "中轴（四驱）", f: [
+      { k: "csd", l: "中轴外径", u: "mm", step: 0.1, show: s => s.swheels === 4 },
+      { k: "csi", l: "中轴内径（实心填 0）", u: "mm", step: 0.1, zero: 1, show: s => s.swheels === 4 },
+      { type: "sel", k: "mcs", l: "中轴材料", show: s => s.swheels === 4 }] }],
+  goals: [
+    { t: "性能", f: [
+      { k: "tgV", l: "极速 ≥", u: "km/h", step: 1, zero: 1 },
+      { k: "tgAcc", l: "0 → 设定速度 ≤", u: "s", step: 0.1, zero: 1, h: "设定速度在「动力」页「估算 0 → ? 加速时间」" },
+      { k: "tgRun", l: "续航 ≥", u: "min", step: 0.5, zero: 1 },
+      { k: "tgCur", l: "峰值电流占电池额定 ≤", u: "%", step: 1, zero: 1 }] },
+    { t: "整车", f: [
+      { k: "tgMass", l: "总重 ≤", u: "kg", step: 0.05, zero: 1 },
+      { k: "tgFr", l: "前轴荷目标", u: "%", step: 0.5, zero: 1 },
+      { k: "tgFrTol", l: "前轴荷允许偏差 ±", u: "%", step: 0.5, zero: 1 },
+      { k: "tgTurn", l: "最小转弯直径 ≤", u: "m", step: 0.05, zero: 1 },
+      { k: "tgRollM", l: "侧翻余量 ≥", u: "×", step: 0.05, zero: 1, h: "侧翻临界 g ÷ 轮胎 μ，> 1 表示先侧滑" }] },
+    { t: "可靠性", f: [
+      { k: "tgSF", l: "关键件设计安全系数 ≥", u: "×", step: 0.1, zero: 1, h: "取「转矩流」页设计 SF 的最小值" },
+      { k: "tgTemp", l: "电机 / 电调 / 电池温度 ≤", u: "°C", step: 1, zero: 1, h: "只能靠实测判定" }] }],
   steer: [
     { t: "车身尺寸", f: [
       { k: "wb", l: "轴距", u: "mm", step: 1, h: "与「车身 · 重心」页共用" },
@@ -609,6 +728,7 @@ function segCtl(f) {
 }
 function selCtl(f, blk) {
   const w = el("div", "field"), id = `${blk}-${f.k}`;
+  if (f.show) SHOW.push([w, f.show]);
   const lab = el("label", null, f.l); lab.htmlFor = id;
   const s = el("select"); s.id = id; s.dataset.k = f.k;
   for (const [n, ys, tag] of MATERIALS) {
@@ -684,7 +804,8 @@ function derive() {
     tm, tw, F, aRaw, aLim, a, tAcc: S.accTo / 3.6 / a, gripF: S.mu * S.mass * G,
     needFdr, needP: S.spur * S.internal / needFdr,
     pinionT: tm, spurT: tm * S.spur / S.pinion, axleT: tw / S.swheels * S.simpact,
-    betaIdeal: C.ackBeta(S.wb, S.kp), beta100: C.beta100(S.sdi, S.wb, S.kp, S.sra) };
+    betaIdeal: C.ackBeta(S.wb, S.kp), beta100: C.beta100(S.sdi, S.wb, S.kp, S.sra),
+    ...flowPulls(torqueFlow()) };
 }
 
 /* ========== 通用小部件 ========== */
@@ -1143,6 +1264,187 @@ function renderSteer() {
   drawSteer(r);
 }
 
+/* ========== 转矩流 · 载荷工况 ========== */
+function torqueFlow() {
+  const R1 = S.spur / S.pinion, i = S.internal, r = S.tire / 2000, four = S.swheels === 4;
+  const tot = S.cf + S.cr, phiF = tot > 0 ? S.cf / tot : 0.5, Wn = S.mass * G;
+  const capF = S.mu * Wn * phiF / 2 * r, capR = S.mu * Wn * (1 - phiF) / 2 * r;   // 单轮抓地上限扭矩
+  const f = four ? Math.min(Math.max(S.fsplit / 100, 0), 1) : 0;
+  const spurCap = four ? Math.min(f > 0 ? 2 * capF / i / f : Infinity, f < 1 ? 2 * capR / i / (1 - f) : Infinity) : 2 * capR / i;
+  const tsNom = C.motorTorque(S.kv, S.cur, S.i0) * R1, tsPk = C.motorTorque(S.kv, S.ipk, S.i0) * R1, tsDes = S.dbasis === "min" ? Math.min(tsPk, spurCap) : tsPk;
+  const lim = S.dbasis === "min" && tsPk > spurCap ? "抓地" : "电机";
+  const gearSF = (z, mat) => (T, k) => MAT[mat] / C.lewis(T, S.lm, z, S.lb, k);
+  const shaftSF = (D_, d_, mat) => (T, k) => d_ >= D_ ? NaN : 0.5 * MAT[mat] / C.tau(T * k, D_, d_);
+  const rows = [
+    { n: "马达齿 / 电机轴", fac: 1 / R1, sf: gearSF(S.pinion, S.mpin), k: S.lk, kind: "g", note: `${S.pinion}T · ${S.mpin}`, pull: "pinDes" },
+    { n: "主齿 / 主齿轴", fac: 1, sf: gearSF(S.spur, S.mspur), k: S.lk, kind: "g", note: `${S.spur}T · ${S.mspur}`, pull: "spurDes" },
+  ];
+  if (four) rows.push(
+    { n: "前中轴（前差输入）", fac: f, sf: shaftSF(S.csd, S.csi, S.mcs), k: S.simpact, kind: "s", note: `Ø${fmtIn(S.csd)}${S.csi > 0 ? "/Ø" + fmtIn(S.csi) : ""} · ${S.mcs}` },
+    { n: "后中轴（后差输入）", fac: 1 - f, sf: shaftSF(S.csd, S.csi, S.mcs), k: S.simpact, kind: "s", note: `Ø${fmtIn(S.csd)}${S.csi > 0 ? "/Ø" + fmtIn(S.csi) : ""} · ${S.mcs}` },
+    { n: "前半轴（每根）", fac: f * i / 2, sf: shaftSF(S.sd, S.si, S.mshaft), k: S.simpact, kind: "s", note: `Ø${fmtIn(S.sd)} · ${S.mshaft}` },
+    { n: "后半轴（每根）", fac: (1 - f) * i / 2, sf: shaftSF(S.sd, S.si, S.mshaft), k: S.simpact, kind: "s", note: `Ø${fmtIn(S.sd)} · ${S.mshaft}` });
+  else rows.push({ n: "后半轴（每根）", fac: i / 2, sf: shaftSF(S.sd, S.si, S.mshaft), k: S.simpact, kind: "s", note: `Ø${fmtIn(S.sd)} · ${S.mshaft}` });
+  for (const x of rows) {
+    x.nom = tsNom * x.fac; x.pk = tsPk * x.fac; x.cap = spurCap * x.fac; x.des = tsDes * x.fac;
+    x.sfNom = x.sf(x.nom, 1); x.sfDes = x.sf(x.des, x.k);
+  }
+  const sfs = rows.map(x => x.sfDes).filter(Number.isFinite);
+  return { rows, lim, four, f, tsNom, tsPk, spurCap, tsDes, capF, capR, phiF, minSF: sfs.length ? Math.min(...sfs) : NaN,
+    minRow: rows.reduce((a, b) => (Number.isFinite(b.sfDes) && (!a || b.sfDes < a.sfDes)) ? b : a, null) };
+}
+function flowPulls(fl) {
+  const half = fl.rows.filter(x => x.n.includes("半轴")).reduce((m, x) => Math.max(m, x.des), 0);
+  return { flow: fl, pinDes: fl.rows[0].des, spurDes: fl.rows[1].des, axleDes: half * S.simpact };
+}
+function renderTorque() {
+  const fl = D.flow, sfKind = (v, t) => !Number.isFinite(v) ? null : v >= t ? "good" : v >= 1 ? "warn" : "bad";
+  const tgt = S.tgSF > 0 ? S.tgSF : 1.5;
+  tiles($("#tq-tiles"), [
+    { k: "主齿轴 名义扭矩", v: fmt(fl.tsNom, 3), u: "N·m", s: `工作电流 ${fmtIn(S.cur)} A` },
+    { k: "主齿轴 电机峰值", v: fmt(fl.tsPk, 3), u: "N·m", s: `峰值电流 ${fmtIn(S.ipk)} A，为名义的 ${fmt(fl.tsPk / fl.tsNom, 2)} 倍` },
+    { k: "主齿轴 抓地上限", v: fmt(fl.spurCap, 3), u: "N·m", s: `μ ${fmtIn(S.mu)} · ${fmtIn(S.mass)} kg · 前轴荷 ${fmt(fl.phiF * 100, 1)}%${fl.four ? ` · 前分配 ${fmtIn(S.fsplit)}%` : " · 后驱"}` },
+    { k: "设计峰值由谁决定", v: fl.lim, key: 1, s: fl.lim === "抓地" ? "按稳态取小：抓地上限更小，轮胎会先打滑。瞬态冲击未计入，偏乐观" : fl.tsPk > fl.spurCap ? `按电机峰值（保守）。抓地上限只有峰值的 ${fmt(fl.spurCap / fl.tsPk * 100, 0)}%，平地全油门会打滑` : "电机峰值低于抓地上限，轮胎不打滑，零件承受全部电机峰值" },
+    { k: "最薄弱件 设计 SF", v: fmt(fl.minSF, 2), u: "×", s: fl.minRow ? fl.minRow.n : "",
+      pill: sfKind(fl.minSF, tgt) && pill(sfKind(fl.minSF, tgt), sfKind(fl.minSF, tgt) === "good" ? `≥ 目标 ${fmtIn(tgt)}` : sfKind(fl.minSF, tgt) === "warn" ? "低于目标" : "小于 1，会失效") },
+  ]);
+  $("#tq-sub").textContent = `齿轮：模数 ${fmtIn(S.lm)}、齿宽 ${fmtIn(S.lb)} mm、K ${fmtIn(S.lk)}（齿轮设计页）；半轴尺寸和材料取自轴强度页，冲击系数 ${fmtIn(S.simpact)}。改这些参数请到对应页面。`;
+  const t = el("table", "data"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+  for (const h of ["部件", "名义", "电机峰值", "抓地上限", "设计峰值", "名义 SF", "设计 SF", ""]) hr.append(el("th", null, h));
+  for (const x of fl.rows) {
+    const tr = tb.insertRow(), nm = el("td", "nm", x.n); nm.append(el("small", null, x.note));
+    const sfCell = (v, tg) => { const td = el("td"); const k = sfKind(v, tg); if (k) td.append(pill(k, fmt(v, 2))); else td.textContent = "—"; return td; };
+    const go = el("td"); const b = el("button", "mini", x.kind === "g" ? "齿轮设计" : "轴强度"); b.type = "button"; b.dataset.tab = x.kind === "g" ? "gear" : "shaft"; go.append(b);
+    tr.append(nm, el("td", null, fmt(x.nom, 3)), el("td", null, fmt(x.pk, 3)), el("td", null, fmt(x.cap, 3)), el("td", "b", fmt(x.des, 3)), sfCell(x.sfNom, tgt), sfCell(x.sfDes, tgt), go);
+  }
+  const u = tb.insertRow(); u.className = "sub"; const td = el("td", null, "单位 N·m；SF 着色按目标 " + fmtIn(tgt) + "（「目标 · 验证」页可改）"); td.colSpan = 8; u.append(td);
+  $("#tq-table").replaceChildren(t);
+  // 材料库
+  const mt = el("table", "data"), mh = mt.createTHead().insertRow(), mb = mt.createTBody();
+  for (const h of ["材料", "状态", "参考强度", "数据性质", "来源 / 说明"]) mh.append(el("th", null, h));
+  for (const [n, ys, tag] of MATERIALS) {
+    const [st, kind, src] = MATINFO[n] || ["", "typ", ""], tr = mb.insertRow();
+    const bd = el("td", "st"); bd.append(el("span", "badge " + kind, kind === "std" ? "标准最低值" : "典型值"));
+    tr.append(el("td", "nm", n + (tag ? `（${tag}）` : "")), el("td", "st", st), el("td", null, ys + " MPa"), bd, el("td", "src", src));
+  }
+  $("#mat-table").replaceChildren(mt);
+}
+
+/* ========== 目标 · 验证 ========== */
+const curCar = () => GAR.find(c => c.name === GCUR);
+const lastTest = (tests, k) => { if (!tests) return null; for (let j = tests.length - 1; j >= 0; j--) if (Number.isFinite(tests[j][k])) return tests[j]; return null; };
+/* 目标项：[标签, 目标说明, 理论值, 实测值, 是否达标(v)] */
+function goalRows(x, tests) {
+  const S_ = x.S, out = [], add = (on, l, tgtTxt, th, mk, pass, u, dp) => { if (!on) return; const m = mk ? lastTest(tests, mk) : null; out.push({ l, tgtTxt, th, meas: m ? m[mk] : NaN, mdate: m ? m.date : "", pass, u, dp }); };
+  add(S_.tgV > 0, "极速", `≥ ${fmtIn(S_.tgV)} km/h`, x.d.vmax, "v", v => v >= S_.tgV, "km/h", 1);
+  add(S_.tgAcc > 0, `0 → ${fmtIn(S_.accTo)} km/h`, `≤ ${fmtIn(S_.tgAcc)} s`, x.d.tAcc, "acc", v => v <= S_.tgAcc, "s", 2);
+  add(S_.tgRun > 0, "续航", `≥ ${fmtIn(S_.tgRun)} min`, C.runtime(S_.cap, S_.avg), "run", v => v >= S_.tgRun, "min", 1);
+  add(S_.tgCur > 0, "峰值电流 / 电池额定", `≤ ${fmtIn(S_.tgCur)} %`, S_.cur / x.imax * 100, null, v => v <= S_.tgCur, "%", 0);
+  add(S_.tgMass > 0, "总重（称重）", `≤ ${fmtIn(S_.tgMass)} kg`, x.tot, null, v => v <= S_.tgMass, "kg", 2);
+  add(S_.tgFr > 0, "前轴荷", `${fmtIn(S_.tgFr)} ± ${fmtIn(S_.tgFrTol)} %`, S_.cf / x.tot * 100, null, v => Math.abs(v - S_.tgFr) <= S_.tgFrTol, "%", 1);
+  add(S_.tgTurn > 0, "最小转弯直径", `≤ ${fmtIn(S_.tgTurn)} m`, x.rout, "turn", v => v <= S_.tgTurn, "m", 2);
+  add(S_.tgRollM > 0, "侧翻余量（临界 g ÷ μ）", `≥ ${fmtIn(S_.tgRollM)}`, x.rg / S_.mu, null, v => v >= S_.tgRollM, "×", 2);
+  add(S_.tgSF > 0, "关键件设计 SF（最小）", `≥ ${fmtIn(S_.tgSF)}`, x.flow.minSF, null, v => v >= S_.tgSF, "×", 2);
+  if (S_.tgTemp > 0) {
+    let m = null, mv = NaN;
+    if (tests) for (let j = tests.length - 1; j >= 0; j--) { const t = tests[j], v = Math.max(...[t.tm, t.te, t.tb].filter(Number.isFinite)); if (Number.isFinite(v)) { m = t; mv = v; break; } }
+    out.push({ l: "最高温度（电机 / 电调 / 电池）", tgtTxt: `≤ ${fmtIn(S_.tgTemp)} °C`, th: NaN, meas: mv, mdate: m ? m.date : "", pass: v => v <= S_.tgTemp, u: "°C", dp: 0, measOnly: 1 });
+  }
+  for (const r of out) {
+    const useM = Number.isFinite(r.meas), v = useM ? r.meas : r.th;
+    r.by = useM ? "实测" : Number.isFinite(r.th) ? "理论" : "";
+    r.ok = r.by ? r.pass(v) : null;
+    r.thOk = Number.isFinite(r.th) ? r.pass(r.th) : null;
+  }
+  return out;
+}
+function goalCount(rows) { const done = rows.filter(r => r.ok === true).length, fail = rows.filter(r => r.ok === false).length; return { done, fail, open: rows.length - done - fail, n: rows.length }; }
+function renderGoals() {
+  const car = curCar(), x = metricsFor(S), rows = goalRows(x, car && car.tests), c = goalCount(rows);
+  tiles($("#gl-tiles"), [
+    { k: "目标达成", v: `${c.done} / ${c.n}`, u: "项", key: 1, s: `未达成 ${c.fail} 项 · 待实测 ${c.open} 项`,
+      pill: c.fail ? pill("bad", "有未达成项") : c.open ? pill("warn", "有待实测项") : c.n ? pill("good", "全部达成") : null },
+    { k: "当前车型", v: car ? car.name : "未存档", s: car ? `${(car.tests || []).length} 条实测记录` : "实测记录需要先在「车型存档」页保存车型" },
+  ]);
+  const t = el("table", "data"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+  for (const h of ["项目", "目标", "理论值", "实测值（最近）", "判定"]) hr.append(el("th", null, h));
+  for (const r of rows) {
+    const tr = tb.insertRow(), th = el("td"), ms = el("td"), ok = el("td", "st");
+    if (Number.isFinite(r.th)) { th.append(document.createTextNode(fmt(r.th, r.dp) + " ")); if (r.thOk != null) th.append(el("span", "badge th", r.thOk ? "✓" : "✗")); } else th.textContent = r.measOnly ? "需实测" : "—";
+    if (Number.isFinite(r.meas)) { ms.append(document.createTextNode(fmt(r.meas, r.dp) + " ")); ms.append(el("small", null, r.mdate)); } else ms.textContent = "—";
+    if (r.ok == null) ok.append(pill("warn", "待实测")); else { ok.append(pill(r.ok ? "good" : "bad", r.ok ? "达成" : "未达成")); ok.append(document.createTextNode(" ")); ok.append(el("span", "badge " + (r.by === "实测" ? "meas" : "th"), "按" + r.by)); }
+    tr.append(el("td", "l", r.l), el("td", null, r.tgtTxt), th, ms, ok);
+  }
+  if (!rows.length) tb.insertRow().append(Object.assign(el("td", "ne", "还没有设置任何目标（全部为 0）"), { colSpan: 5 }));
+  $("#gl-table").replaceChildren(t);
+  renderTests(car);
+}
+function testSnapshot() {
+  const d = D;
+  return { kv: S.kv, volt: d.v, pinion: S.pinion, spur: S.spur, internal: S.internal, tire: S.tire, lf: S.lf, cap: S.cap, avg: S.avg,
+    vmax0: d.vmax0, vmax: d.vmax, tAcc: d.tAcc, run: C.runtime(S.cap, S.avg), turn: metricsFor(S).rout };
+}
+function renderTests(car) {
+  const hint = $("#ts-car"), btn = $("#ts-add");
+  if (!$("#ts-date").value) { try { $("#ts-date").value = new Date().toISOString().slice(0, 10); } catch (e) {} }
+  hint.replaceChildren();
+  if (car) { hint.append(document.createTextNode("记录到车型：")); hint.append(el("b", null, car.name)); if (!sameParams(clean(car.params), S)) hint.append(document.createTextNode("（当前参数已改动但未保存到车型，记录会按当前参数存理论值）")); }
+  else hint.textContent = "请先到「车型存档」页保存或载入一个车型，实测记录跟车型一起保存。";
+  btn.disabled = !car;
+  const tests = car ? car.tests || [] : [];
+  const lfs = tests.filter(t => Number.isFinite(t.v) && t.snap && t.snap.vmax0 > 0).map(t => t.v / t.snap.vmax0);
+  const runs = tests.filter(t => Number.isFinite(t.run) && t.run > 0 && t.snap).map(t => t.snap.cap / 1000 * 0.8 / (t.run / 60));
+  const mean = a => a.length ? a.reduce((p, q) => p + q, 0) / a.length : NaN;
+  tiles($("#ts-tiles"), [
+    { k: "实测带载系数（平均）", v: fmt(mean(lfs), 3), u: "×", s: lfs.length ? `${lfs.length} 次测速 · 当前模型用 ${fmtIn(S.lf)}` : "还没有测速记录" },
+    { k: "反推平均电流（平均）", v: fmt(mean(runs), 1), u: "A", s: runs.length ? `${runs.length} 次续航 · 当前模型用 ${fmtIn(S.avg)} A` : "还没有续航记录" },
+  ]);
+  const host = $("#ts-table");
+  if (!tests.length) { host.replaceChildren(el("div", "empty", car ? "还没有实测记录。" : "—")); return; }
+  const t = el("table", "data"), hr = t.createTHead().insertRow(), tb = t.createTBody();
+  for (const h of ["日期 / 场地", "极速 实测 / 当时理论", "带载系数", "续航 实测 / 当时理论", "反推电流", "温度 电机/电调/电池", ""]) hr.append(el("th", null, h));
+  const dev = (m, th) => Number.isFinite(m) && th > 0 ? ` (${m >= th ? "+" : ""}${fmt((m - th) / th * 100, 0)}%)` : "";
+  tests.slice().reverse().forEach(ts => {
+    const sn = ts.snap || {}, tr = tb.insertRow();
+    const nm = el("td", "nm", ts.date || "—"); nm.append(el("small", null, [ts.place, ts.note].filter(Boolean).join(" · ") + (sn.pinion ? `（${sn.pinion}T/${sn.spur}T，${fmt(sn.volt, 1)} V）` : "")));
+    const lf = Number.isFinite(ts.v) && sn.vmax0 > 0 ? ts.v / sn.vmax0 : NaN, ia = Number.isFinite(ts.run) && ts.run > 0 && sn.cap ? sn.cap / 1000 * 0.8 / (ts.run / 60) : NaN;
+    const acts = el("td", "acts"), mk = (txt, a, cls) => { const b = el("button", "mini" + (cls || ""), txt); b.type = "button"; b.dataset.ts = a; b.dataset.id = ts.id; acts.append(b); };
+    if (Number.isFinite(lf)) mk("用此带载系数", "lf");
+    if (Number.isFinite(ia)) mk("用此平均电流", "avg");
+    mk("删除", "del", " danger");
+    const temps = [ts.tm, ts.te, ts.tb].map(v => Number.isFinite(v) ? fmt(v, 0) : "—").join(" / ") + (Number.isFinite(ts.ta) ? ` · 环境 ${fmt(ts.ta, 0)}` : "");
+    tr.append(nm,
+      el("td", null, Number.isFinite(ts.v) ? `${fmt(ts.v, 1)} / ${fmt(sn.vmax, 1)}${dev(ts.v, sn.vmax)}` : "—"),
+      el("td", null, fmt(lf, 3)),
+      el("td", null, Number.isFinite(ts.run) ? `${fmt(ts.run, 1)} / ${fmt(sn.run, 1)}${dev(ts.run, sn.run)}` : "—"),
+      el("td", null, Number.isFinite(ia) ? fmt(ia, 1) + " A" : "—"),
+      el("td", null, temps), acts);
+  });
+  host.replaceChildren(t);
+}
+$("#ts-add").addEventListener("click", () => {
+  const car = curCar(); if (!car) { toast("请先保存或载入车型"); return; }
+  const num = id => { const v = $(id).value.trim(); return v === "" ? NaN : Number(v); };
+  const rec = { id: "t" + Date.now().toString(36), date: $("#ts-date").value || new Date().toISOString().slice(0, 10), place: $("#ts-place").value.trim(), note: $("#ts-note").value.trim(),
+    v: num("#ts-v"), acc: num("#ts-acc"), run: num("#ts-run"), turn: num("#ts-turn"), tm: num("#ts-tm"), te: num("#ts-te"), tb: num("#ts-tb"), ta: num("#ts-ta"), snap: testSnapshot() };
+  if (![rec.v, rec.acc, rec.run, rec.turn, rec.tm, rec.te, rec.tb].some(Number.isFinite)) { toast("请至少填一项实测数据"); return; }
+  (car.tests ||= []).push(rec); gSave();
+  for (const id of ["#ts-place", "#ts-note", "#ts-v", "#ts-acc", "#ts-run", "#ts-turn", "#ts-tm", "#ts-te", "#ts-tb", "#ts-ta"]) $(id).value = "";
+  renderGoals(); renderGarage(); toast(`已记录到「${car.name}」`);
+});
+$("#goals").addEventListener("click", e => {
+  const b = e.target.closest("button[data-ts]"); if (!b) return;
+  const car = curCar(); if (!car) return;
+  const ts = (car.tests || []).find(t => t.id === b.dataset.id); if (!ts) return;
+  const sn = ts.snap || {};
+  if (b.dataset.ts === "lf") { const v = +(ts.v / sn.vmax0).toFixed(3); if (v > 0 && v <= 1.2) { S.lf = v; update(); toast(`带载系数已改为 ${v}，记得到「车型存档」保存`); } }
+  else if (b.dataset.ts === "avg") { const v = +(sn.cap / 1000 * 0.8 / (ts.run / 60)).toFixed(1); if (v > 0) { S.avg = v; update(); toast(`平均电流已改为 ${v} A，记得到「车型存档」保存`); } }
+  else if (b.dataset.ts === "del") {
+    if (!b.classList.contains("arm")) { b.classList.add("arm"); b.textContent = "确认删除"; setTimeout(() => { b.classList.remove("arm"); b.textContent = "删除"; }, 3000); return; }
+    car.tests = car.tests.filter(t => t !== ts); gSave(); renderGoals(); renderGarage(); toast("已删除该条记录");
+  }
+});
+
 /* ========== 车型存档 · 对比 ========== */
 const GKEY = "rc-calc-garage-v1";
 let GAR = [], GCUR = "", GCMP = "";
@@ -1154,7 +1456,9 @@ function clean(p) {   // 只保留已知参数，类型不对的用默认值
   for (const k in DEF) if (p && typeof p[k] === typeof DEF[k] && (typeof p[k] !== "number" || Number.isFinite(p[k]))) o[k] = p[k];
   for (const k of ["mpin", "mspur"]) if (!(o[k] in MAT)) o[k] = DEF[k];
   if (!MATERIALS.some(m => m[0] === o.mshaft && !m[2])) o.mshaft = DEF.mshaft;
+  if (!MATERIALS.some(m => m[0] === o.mcs && !m[2])) o.mcs = DEF.mcs;
   if (!["pin", "spur", "custom"].includes(o.lobj)) o.lobj = DEF.lobj;
+  if (!["pk", "min"].includes(o.dbasis)) o.dbasis = DEF.dbasis;
   return o;
 }
 const sameParams = (a, b) => Object.keys(DEF).every(k => typeof DEF[k] === "number" ? Math.abs(a[k] - b[k]) < 1e-9 : a[k] === b[k]);
@@ -1164,7 +1468,7 @@ function metricsFor(p) {
   try {
     const d = derive(); D = d;
     const gp = gearCheck("pin", S.mpin), gs = gearCheck("spur", S.mspur), tau = C.tau(S.st, S.sd, S.si), st = steerCalc(S.sdi), tot = S.cf + S.cr;
-    return { S, d, gp, gs, tau, ssf: 0.5 * MAT[S.mshaft] / tau, st, tot, imax: C.maxCur(S.cap, S.crate), rg: C.rollG(S.tw, S.ch),
+    return { S, d, flow: d.flow, gp, gs, tau, ssf: 0.5 * MAT[S.mshaft] / tau, st, tot, imax: C.maxCur(S.cap, S.crate), rg: C.rollG(S.tw, S.ch),
       rout: (S.wb / Math.sin(st.ideal * RAD) + (S.tw - S.kp) / 2) * 2 / 1000 };
   } finally { S = keep; D = keepD; }
 }
@@ -1192,8 +1496,13 @@ function cmpRows() {
   R("阿克曼百分比", "%", x => x.st.pct, 0, 0);
   R("外侧轮最大转角（实际）", "°", x => x.st.act, 2, 0);
   R("最小转弯直径", "m", x => x.rout, 2, -1);
+  R("设计峰值（主齿轴）", "N·m", x => x.flow.tsDes, 3, 0);
+  R("最薄弱件 设计 SF", "×", x => x.flow.minSF, 2, 1);
+  R("目标达成项数", "项", x => goalCount(goalRows(x, x.tests)).done, 0, 1);
+  R("实测极速（最近）", "km/h", x => { const t = lastTest(x.tests, "v"); return t ? t.v : NaN; }, 1, 1);
+  R("实测续航（最近）", "min", x => { const t = lastTest(x.tests, "run"); return t ? t.run : NaN; }, 1, 1);
   const seen = new Set();
-  for (const [blk, title] of [["drive", "动力 · 齿比"], ["geom", "齿轮几何"], ["combo", "齿数组合"], ["lewis", "齿轮强度"], ["shaft", "轴强度"], ["batt", "电池"], ["chassis", "车身"], ["steer", "转向"]]) {
+  for (const [blk, title] of [["drive", "动力 · 齿比"], ["geom", "齿轮几何"], ["combo", "齿数组合"], ["lewis", "齿轮强度"], ["shaft", "轴强度"], ["batt", "电池"], ["chassis", "车身"], ["steer", "转向"], ["torque", "转矩流"], ["goals", "目标"]]) {
     rows.push([`参数 · ${title}`, null]);
     for (const g of BLOCKS[blk]) for (const f of g.f) {
       if (f.type === "volt") { if (!seen.has("volt")) { seen.add("volt"); rows.push(["电池电压", "", x => voltTxt(x), null, 0, 0]); } continue; }
@@ -1210,6 +1519,7 @@ const carById = id => GAR.find(c => c.id === id);
 const optLabel = id => id === "@cur" ? "当前参数（未保存）" : (carById(id) || {}).name;
 function fmtTime(t) { try { return new Date(t).toLocaleString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
 function renderGarage() {
+  renderGoals();   // 存档变动（保存 / 载入 / 删除 / 导入）后目标页和实测记录要跟着刷新
   // 当前状态
   const cur = GAR.find(c => c.name === GCUR), host = $("#g-cur");
   host.replaceChildren();
@@ -1224,7 +1534,7 @@ function renderGarage() {
     for (const h of ["车型", "极速", "FDR", "总重", "阿克曼", "保存时间", ""]) hr.append(el("th", null, h));
     for (const c of GAR) {
       const x = metricsFor(c.params), tr = tb.insertRow(); if (c.name === GCUR) tr.className = "on";
-      const nm = el("td", "nm", c.name); if (c.note) nm.append(el("small", null, c.note));
+      const nm = el("td", "nm", c.name); if (c.note || (c.tests && c.tests.length)) nm.append(el("small", null, [c.note, c.tests && c.tests.length ? `${c.tests.length} 条实测` : ""].filter(Boolean).join(" · ")));
       const acts = el("td", "acts");
       for (const [a, txt, cls] of [["load", "载入"], ["over", "覆盖"], ["del", "删除", " danger"]]) { const b = el("button", "mini" + (cls || ""), txt); b.type = "button"; b.dataset.g = a; b.dataset.id = c.id; acts.append(b); }
       tr.append(nm, el("td", null, fmt(x.d.vmax, 1) + " km/h"), el("td", null, fmt(x.d.fdr, 2)), el("td", null, fmt(x.tot, 2) + " kg"), el("td", null, fmt(x.st.pct, 0) + "%"), el("td", null, fmtTime(c.t)), acts);
@@ -1246,6 +1556,7 @@ function renderCompare() {
   const out = $("#g-cmp");
   if (!pa || !pb) { out.replaceChildren(el("div", "empty", "请选择两个车型")); GCMP = ""; return; }
   const A = metricsFor(pa), B = metricsFor(pb), na = optLabel(ia), nb = optLabel(ib);
+  A.tests = ia === "@cur" ? (curCar() || {}).tests : (carById(ia) || {}).tests; B.tests = ib === "@cur" ? (curCar() || {}).tests : (carById(ib) || {}).tests;
   $("#g-cmp-sub").textContent = ia === ib ? "A 和 B 是同一个，请换一个对比对象" : `A = ${na}，B = ${nb}`;
   const t = el("table", "data cmp"), hr = t.createTHead().insertRow(), tb = t.createTBody();
   for (const h of ["项目", "A", "B", "差值 (B−A)", "变化"]) hr.append(el("th", null, h));
@@ -1320,7 +1631,11 @@ $("#g-file").addEventListener("change", e => {
     for (const c of cars) {
       if (!c || typeof c.name !== "string" || !c.name.trim() || !c.params || typeof c.params !== "object") continue;
       const p = clean(c.params), ex = GAR.find(x => x.name === c.name.trim());
-      const rec = { id: ex ? ex.id : "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: c.name.trim().slice(0, 40), note: typeof c.note === "string" ? c.note.slice(0, 120) : "", t: Number.isFinite(c.t) ? c.t : Date.now(), params: p };
+      const rec = { id: ex ? ex.id : "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: c.name.trim().slice(0, 40), note: typeof c.note === "string" ? c.note.slice(0, 120) : "", t: Number.isFinite(c.t) ? c.t : Date.now(), params: p,
+        tests: Array.isArray(c.tests) ? c.tests.filter(t => t && typeof t === "object").slice(0, 500).map(t => { const o = { id: String(t.id || "t" + Math.random().toString(36).slice(2, 8)), date: String(t.date || "").slice(0, 10), place: String(t.place || "").slice(0, 40), note: String(t.note || "").slice(0, 120), snap: {} };
+          for (const k of ["v", "acc", "run", "turn", "tm", "te", "tb", "ta"]) o[k] = Number.isFinite(t[k]) ? t[k] : NaN;
+          if (t.snap && typeof t.snap === "object") for (const k in t.snap) if (Number.isFinite(t.snap[k])) o.snap[k] = t.snap[k];
+          return o; }) : (ex && ex.tests) || [] };
       if (ex) Object.assign(ex, rec); else GAR.push(rec);
       n++;
     }
@@ -1331,7 +1646,7 @@ for (const id of ["#g-a", "#g-b", "#g-only"]) $(id).addEventListener("change", r
 $("#g-name").addEventListener("keydown", e => { if (e.key === "Enter") $("#g-save").click(); });
 
 /* ========== 总结 · BOM ========== */
-const TABNAME = { drive: "动力 · 齿比", gear: "齿轮设计", shaft: "轴强度", battery: "电池 · 续航", chassis: "车身 · 重心", steer: "转向 · 阿克曼" };
+const TABNAME = { drive: "动力 · 齿比", gear: "齿轮设计", shaft: "轴强度", battery: "电池 · 续航", chassis: "车身 · 重心", steer: "转向 · 阿克曼", torque: "转矩流 · 载荷", goals: "目标 · 验证" };
 const PICKNAME = { mpin: "马达齿材料", mspur: "主齿材料", mshaft: "轴材料" };
 let BOM_TSV = "";
 function gearCheck(obj, mat) {
@@ -1386,11 +1701,11 @@ function renderSummary() {
 }
 
 /* ========== 刷新 ========== */
-const TABS = ["drive", "gear", "shaft", "battery", "chassis", "steer", "garage", "summary"];
+const TABS = ["drive", "gear", "shaft", "torque", "battery", "chassis", "steer", "goals", "garage", "summary"];
 let TAB = "drive";
 function renderCharts() { if (TAB === "drive") renderDriveCharts(); }
 function render() {
-  renderDrive(); renderGeom(); renderCombo(); renderLewis(); renderShaft(); renderBatt(); renderChassis(); renderSteer(); renderSummary(); renderGarage();
+  renderDrive(); renderGeom(); renderCombo(); renderLewis(); renderShaft(); renderBatt(); renderChassis(); renderSteer(); renderTorque(); renderSummary(); renderGarage();
   renderCharts();
 }
 function update() { D = derive(); render(); sync(); save(); }
