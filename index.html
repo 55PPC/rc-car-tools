@@ -563,28 +563,48 @@ const LEWIS_Y = [[12,.245],[13,.261],[14,.277],[15,.290],[16,.296],[17,.303],[18
 // 第三项 "铜齿"：只在齿轮强度里列出，轴强度不列
 const MATERIALS = [["PA66 尼龙",60],["PA66+30% 玻纤",150],["POM 赛钢",65],["铅黄铜 HPb59-1 / C3604",170,"铜齿"],["H62 黄铜（半硬）",250,"铜齿"],
   ["6061-T6 铝",275],["7075-T6 铝",500],
-  ["Q235（A3）",235],["1018 低碳钢（冷拉）",370],["SUM24L 易切削钢（冷拉）",415],
-  ["45# 钢（调质）",355],["40Cr（调质）",785],["65Mn（淬火回火）",785],["20CrMnTi（渗碳淬火）",850],["10.9 级合金钢（SCM435 等）",940],["钛合金 TC4",830]];
+  ["PA-CF 碳纤增强尼龙",120],
+  ["Q235（A3）",235],["1018 低碳钢（冷拉）",370],["SUM24L 易切削钢（冷拉）",415],["304 / 316 不锈钢",205],
+  ["45# 钢（调质）",355],["40Cr（调质）",785],["42CrMo / 4140（调质）",930],["40CrNiMo（调质）",835],["65Mn（淬火回火）",785],["20CrMnTi（渗碳淬火）",850],
+  ["GCr15 / SUJ2（淬火）",1600],["10.9 级合金钢（SCM435 等）",940],["12.9 级合金钢",1100],["钛合金 TC4",830]];
+/* 「1/10 RC 部件材料选型手册」对各零件的推荐材料：下拉框里排在「选型手册推荐」一组，强度图里标「推荐」 */
+const RECO = {
+  mpin: [["7075-T6 铝", "40Cr（调质）", "42CrMo / 4140（调质）", "20CrMnTi（渗碳淬火）"], "手册：限功率竞速用 7075 硬质阳极（配 POM 大齿）；高功率用淬火合金钢（HRC 45–55），顶丝孔要磨平面"],
+  mspur: [["POM 赛钢", "PA66+30% 玻纤", "7075-T6 铝", "40Cr（调质）", "20CrMnTi（渗碳淬火）"], "手册：有刷 / 竞速 2S 用 POM；2S–3S 入门车用 PA-GF；4S–6S 大脚、短卡用钢（40Cr / 20CrMnTi，模数 0.8–1）"],
+  chain: [["20CrMnTi（渗碳淬火）", "40CrNiMo（调质）", "40Cr（调质）", "POM 赛钢", "PA66+30% 玻纤"], "手册：差速伞齿 / 行星齿高功率用 20CrMnTi 渗碳淬火 HRC 58–62，40Cr 调质 + 高频淬火是易加工替代；入门、竞速 2S 可用 POM / PA-GF（齿宽放大约 1.5 倍）"],
+  mshaft: [["40Cr（调质）", "42CrMo / 4140（调质）", "45# 钢（调质）", "GCr15 / SUJ2（淬火）"], "手册：狗骨 / 传动杆用 40Cr / 4140 / S45C 淬火 + 发黑；CVD 销和杯是磨损重灾区，建议 HRC ≥ 55"],
+  mcs: [["7075-T6 铝", "6061-T6 铝", "40Cr（调质）", "45# 钢（调质）"], "手册：中央传动轴用 7075 / 6061 管或碳纤维管（两端粘金属接头）；碳纤维管强度随铺层变化，这里无法给出统一值"],
+  mpin2: [["GCr15 / SUJ2（淬火）", "40Cr（调质）", "12.9 级合金钢", "钛合金 TC4"], "手册：悬挂销 / 横销用淬火钢（SUJ2 / 40Cr）镀镍或镀钛，越野用钢；减重才用 TC4（轻约 45%）"],
+  mhub: [["PA66+30% 玻纤", "PA66 尼龙", "7075-T6 铝", "6061-T6 铝", "40Cr（调质）"], "手册：轮毂主流 PA / PA-GF（有弹性可保护车桥）；轮六角 7075 / PA-GF，大脚 17 mm 高功率可用钢六角"],
+};
+const recoKey = k => /^g\dmat$/.test(k) ? "chain" : k;
+const isReco = (k, n) => !!(RECO[recoKey(k)] && RECO[recoKey(k)][0].includes(n));
 /* 弹性模量 E (GPa) 与密度 ρ (g/cm³)，用于临界转速、接触应力等 */
-const MATPHYS = n => /铝/.test(n) ? [69, 2.7] : /黄铜|铜/.test(n) ? [100, 8.5] : /钛/.test(n) ? [114, 4.43] : /玻纤/.test(n) ? [8, 1.36] : /PA66/.test(n) ? [2.8, 1.14] : /POM/.test(n) ? [2.9, 1.41] : [206, 7.85];
+const MATPHYS = n => /铝/.test(n) ? [69, 2.7] : /黄铜|铜/.test(n) ? [100, 8.5] : /钛/.test(n) ? [114, 4.43] : /玻纤/.test(n) ? [8, 1.36] : /PA-CF/.test(n) ? [10, 1.25] : /PA66/.test(n) ? [2.8, 1.14] : /POM/.test(n) ? [2.9, 1.41] : [206, 7.85];
 /* 材料数据性质：std = 标准最低保证值，typ = 手册 / 常见典型值（需换成供应商数据） */
 const MATINFO = {
-  "PA66 尼龙": ["干态，注塑", "typ", "拉伸强度参考值；吸湿后明显下降"],
-  "PA66+30% 玻纤": ["干态，注塑", "typ", "拉伸强度参考值；吸湿、纤维取向影响大"],
-  "POM 赛钢": ["均聚 / 共聚", "typ", "拉伸强度参考值"],
-  "铅黄铜 HPb59-1 / C3604": ["半硬棒材", "typ", "参照 C36000 半硬棒材最低屈服值"],
-  "H62 黄铜（半硬）": ["1/2H", "typ", "半硬状态下限参考值"],
-  "6061-T6 铝": ["T6", "typ", "典型值 275；挤压材标准最低约 240"],
-  "7075-T6 铝": ["T6", "typ", "典型值约 500；注意应力腐蚀"],
-  "Q235（A3）": ["热轧", "std", "GB/T 700 屈服强度最低值（厚度 ≤ 16 mm）"],
-  "1018 低碳钢（冷拉）": ["冷拉", "typ", "AISI 1018 冷拉典型值；不能整体淬硬，渗碳只提高表面硬度"],
-  "SUM24L 易切削钢（冷拉）": ["冷拉", "typ", "参照 AISI 12L14 冷拉典型值；含铅硫，疲劳与韧性差，不宜用于交变扭矩件"],
-  "45# 钢（调质）": ["调质", "std", "按 GB/T 699 正火最低值 355 保守取；调质后实际更高，以热处理硬度换算或材证为准"],
-  "40Cr（调质）": ["调质", "std", "GB/T 3077 最低值"],
-  "65Mn（淬火回火）": ["淬火 + 中温回火", "std", "GB/T 1222 弹簧钢最低值；电镀后需除氢"],
-  "20CrMnTi（渗碳淬火）": ["渗碳淬火 + 低温回火", "std", "GB/T 3077 心部最低值（15 mm 试样）；齿面硬度另计"],
-  "10.9 级合金钢（SCM435 等）": ["淬火回火", "std", "ISO 898-1 规定塑性延伸强度最低值；用于螺栓 / 销"],
-  "钛合金 TC4": ["退火", "typ", "典型值，参照 Ti-6Al-4V 退火态"],
+  "PA66 尼龙": ["干态，注塑", "typ", "拉伸强度参考值；吸湿后明显下降", "软版摆臂、轮毂、保险杠（手册：PA6 / PA12 纯尼龙，抗拉约 50–80）"],
+  "PA66+30% 玻纤": ["干态，注塑", "typ", "拉伸强度参考值；吸湿、纤维取向影响大", "摆臂、C 座、齿轮箱、浴盆底盘、轮毂、入门车大齿与差速壳"],
+  "POM 赛钢": ["均聚 / 共聚", "typ", "拉伸强度参考值", "大齿（有刷 / 竞速 2S）、差速壳、塑料行星齿、球头、活塞、皮带轮"],
+  "铅黄铜 HPb59-1 / C3604": ["半硬棒材", "typ", "参照 C36000 半硬棒材最低屈服值", "配重、衬套（手册：黄铜 H59 / C3604）"],
+  "H62 黄铜（半硬）": ["1/2H", "typ", "半硬状态下限参考值", "配重、衬套"],
+  "6061-T6 铝": ["T6", "typ", "典型值 275；挤压材标准最低约 240", "攀爬大梁、散热片、低载支架、中央传动轴管、Beadlock 轮毂"],
+  "7075-T6 铝": ["T6", "typ", "典型值约 500；注意应力腐蚀", "底板、避震筒、马达座、主齿（限功率）、皮带轮、中央传动轴、轮座、六角"],
+  "Q235（A3）": ["热轧", "std", "GB/T 700 屈服强度最低值（厚度 ≤ 16 mm）", "（手册未列）旧 BOM 中的螺母、板件"],
+  "1018 低碳钢（冷拉）": ["冷拉", "typ", "AISI 1018 冷拉典型值；不能整体淬硬，渗碳只提高表面硬度", "（手册未列）旧 BOM 中的螺丝"],
+  "SUM24L 易切削钢（冷拉）": ["冷拉", "typ", "参照 AISI 12L14 冷拉典型值；含铅硫，疲劳与韧性差，不宜用于交变扭矩件", "（手册未列）旧 BOM 中的轴、销、球头"],
+  "45# 钢（调质）": ["调质", "std", "按 GB/T 699 正火最低值 355 保守取；调质后实际更高，以热处理硬度换算或材证为准", "狗骨 / 传动杆（手册：S45C）"],
+  "40Cr（调质）": ["调质", "std", "GB/T 3077 最低值", "传动轴、狗骨、CVD、销轴、高功率主齿 / 大齿"],
+  "65Mn（淬火回火）": ["淬火 + 中温回火", "std", "GB/T 1222 弹簧钢最低值；电镀后需除氢", "避震弹簧、防倾杆、卡销"],
+  "20CrMnTi（渗碳淬火）": ["渗碳淬火 + 低温回火", "std", "GB/T 3077 心部最低值（15 mm 试样）；齿面硬度另计", "差速伞齿 / 行星齿、钢大齿、主齿（HRC 58–62）"],
+  "10.9 级合金钢（SCM435 等）": ["淬火回火", "std", "ISO 898-1 规定塑性延伸强度最低值；用于螺栓 / 销", "螺栓、销"],
+  "钛合金 TC4": ["退火", "typ", "典型值，参照 Ti-6Al-4V 退火态", "拉杆、减重螺丝、悬挂销（减重）"],
+  "PA-CF 碳纤增强尼龙": ["干态，注塑 / 打印", "typ", "选型手册：抗拉约 120–200，取下限；打印件层间更弱", "硬版摆臂、转向件、原型试跑件"],
+  "304 / 316 不锈钢": ["固溶（退火）", "std", "GB/T 1220、ASTM A276 屈服最低值 205（抗拉约 520）", "防锈螺丝、垫片、攀爬车配重"],
+  "42CrMo / 4140（调质）": ["调质", "std", "GB/T 3077 屈服最低值", "传动轴、狗骨、CVD（手册：4140）"],
+  "40CrNiMo（调质）": ["调质", "std", "GB/T 3077 40CrNiMoA 屈服最低值", "差速伞齿 / 行星齿（高端机加工）"],
+  "GCr15 / SUJ2（淬火）": ["淬火 + 低温回火", "typ", "淬火态无明显屈服点：按选型手册抗拉约 2000 的 0.8 倍估算，需以材证为准", "轴承、精磨销轴、CVD 销与杯"],
+  "12.9 级合金钢": ["淬火回火", "std", "ISO 898-1 规定塑性延伸强度最低值", "结构螺丝（手册：1/10 主流 M3 发黑）"],
 };
 const C = {
   fdr: (p, s, i = 1) => s / p * i,
@@ -672,7 +692,7 @@ const DEF = { kv: 3300, cells: 2, vmode: "n", volt: 7.4, lf: 0.85, pinion: 18, s
   g3a: 16, g3b: 0, g3t: "spur", g3m: 1, g3w: 6, g3mat: "45# 钢（调质）", g3h: 650,
   smu: 1, tbw: 30, scrub: 6, shr: 15, ssv: 1.5,
   ptq: 1, pd: 2, pD: 5, prc: 3.5, pl: 3, mpin2: "10.9 级合金钢（SCM435 等）", mhub: "PA66+30% 玻纤",
-  tsz: "M3", tgr: "8.8", tk: 0.2, tpct: 70,
+  tsz: "M3", tgr: "12.9", tk: 0.2, tpct: 70,
   bpre: "608", bC: 3.45, bfr: 5, bfa: 0, bfd: 2, bspd: 25,
   ipk: 120, dbasis: "pk", fsplit: 50, csd: 6, csi: 0, mcs: "45# 钢（调质）",
   tgV: 45, tgAcc: 0, tgRun: 10, tgCur: 80, tgMass: 2.2, tgFr: 45, tgFrTol: 5, tgTurn: 1.8, tgRollM: 1.2, tgSF: 1.5, tgTemp: 80,
@@ -684,7 +704,7 @@ try {
   if (saved && typeof saved === "object") for (const k in DEF) if (typeof saved[k] === typeof DEF[k] && (typeof saved[k] !== "number" || Number.isFinite(saved[k]))) S[k] = saved[k];
 } catch (e) {}
 const MAT = Object.fromEntries(MATERIALS.map(([n, ys]) => [n, ys]));
-const THREADS_OK = ["M2", "M2.5", "M3", "M4", "M5", "M6"], GRADES_OK = ["4.8", "8.8", "10.9", "12.9", "A2-70"], BEARS_OK = ["608", "6800", "6900", "6000", "6001", "custom"];
+const THREADS_OK = ["M2", "M2.5", "M3", "M4", "M5", "M6"], GRADES_OK = ["4.8", "8.8", "10.9", "12.9", "A2-70", "TC4"], BEARS_OK = ["608", "6800", "6900", "6000", "6001", "custom"];
 for (const k of ["mpin", "mspur"]) if (!(S[k] in MAT)) S[k] = DEF[k];
 for (const k of ["mcs", "mpin2"]) if (!MATERIALS.some(m => m[0] === S[k] && !m[2])) S[k] = DEF[k];
 if (!(S.mhub in MAT)) S.mhub = DEF.mhub;
@@ -811,7 +831,7 @@ const BLOCKS = {
     { t: "编辑", f: [
       { type: "seg", k: "sax", l: "当前编辑", opts: [["f", "前悬架"], ["r", "后悬架"]] },
       { k: "sG", l: "弹簧材料剪切模量 G", u: "GPa", step: 1, h: "碳素弹簧钢丝 / 65Mn / 琴钢丝约 79" },
-      { k: "sRm", l: "钢丝抗拉强度 Rm", u: "MPa", step: 10, h: "随线径变化很大：Ø1 左右的琴钢丝约 2000+，65Mn 粗线约 1000–1600，按钢丝证书填" },
+      { k: "sRm", l: "钢丝抗拉强度 Rm", u: "MPa", step: 10, pre: [[2000, "琴钢丝 SWP-B ≈2000"], [1800, "55CrSi ≈1800"], [1600, "65Mn ≈1600"]], h: "随线径变化很大：Ø1 左右的琴钢丝约 2000+，65Mn 粗线约 1000–1600，按钢丝证书填" },
       { k: "sz", l: "目标阻尼比 ζ", u: "", step: 0.05, pre: [[0.3, "0.3 舒适"], [0.4, "0.4"], [0.5, "0.5 竞速"]] }] },
     { t: "前悬架", f: [
       { k: "ffq", l: "目标车身频率", u: "Hz", step: 0.1, show: s => s.sax === "f" },
@@ -855,7 +875,7 @@ const BLOCKS = {
       { type: "sel", k: "mhub", l: "轮毂 / 六角座材料", gear: 1 }] }],
   thread: [{ t: "螺纹", f: [
     { type: "seg", k: "tsz", l: "规格", opts: [["M2", "M2"], ["M2.5", "M2.5"], ["M3", "M3"], ["M4", "M4"], ["M5", "M5"], ["M6", "M6"]] },
-    { type: "seg", k: "tgr", l: "强度等级", opts: [["4.8", "4.8"], ["8.8", "8.8"], ["10.9", "10.9"], ["12.9", "12.9"], ["A2-70", "A2-70 不锈"]] },
+    { type: "seg", k: "tgr", l: "强度等级", opts: [["4.8", "4.8"], ["8.8", "8.8"], ["10.9", "10.9"], ["12.9", "12.9"], ["A2-70", "A2-70 不锈"], ["TC4", "TC4 钛"]], h: "手册：1/10 结构螺丝主流用 M3 12.9 级合金钢发黑；减重换 TC4 钛（轻约 43%）；涉水车型用 304 / 316 不锈（A2-70）；7075 螺丝只用于不受剪切的位置" },
     { k: "tpct", l: "预紧力占屈服的比例", u: "%", min: 30, max: 90, step: 1, sl: 1, h: "常用 60–75%；塑料、铝母件要低得多" },
     { k: "tk", l: "扭矩系数 K", u: "", step: 0.01, pre: [[0.15, "润滑 0.15"], [0.2, "干燥 0.2"]] }] }],
   bearing: [
@@ -940,12 +960,17 @@ function selCtl(f, blk) {
   if (f.show) SHOW.push([w, f.show]);
   const lab = el("label", null, f.l); lab.htmlFor = id;
   const s = el("select"); s.id = id; s.dataset.k = f.k;
-  for (const [n, ys, tag] of MATERIALS) {
-    if (tag && !f.gear) continue;
-    const o = el("option", null, `${n}（${ys} MPa）`); o.value = n; s.append(o);
-  }
+  const R = RECO[recoKey(f.k)], opt = ([n, ys]) => { const o = el("option", null, `${n}（${ys} MPa）`); o.value = n; return o; };
+  const avail = MATERIALS.filter(m => !m[2] || f.gear);
+  if (R) {
+    const g1 = el("optgroup"), g2 = el("optgroup"); g1.label = "选型手册推荐"; g2.label = "其他材料";
+    for (const n of R[0]) { const m = avail.find(x => x[0] === n); if (m) g1.append(opt(m)); }
+    for (const m of avail) if (!R[0].includes(m[0])) g2.append(opt(m));
+    s.append(g1, g2);
+  } else for (const m of avail) s.append(opt(m));
   w.append(lab, el("span"), s);
   if (f.h) w.append(el("div", "hint", f.h));
+  if (R) w.append(el("div", "hint", R[1]));
   return w;
 }
 function voltCtl(blk) {
@@ -1305,7 +1330,8 @@ function renderLewis() {
     { k: "Lewis 齿形系数 Y", v: fmt(C.lewisY(z), 3), s: `${z} 齿，20° 全齿高标准齿形` },
   ]);
   if (!(sig > 0)) { $("#lewis-bars").replaceChildren(el("p", "note", "扭矩大于 0 时显示各材料安全系数。")); return; }
-  const tagsOf = n => [n === S.mpin && "马达齿", n === S.mspur && "主齿"].filter(Boolean);
+  const rk = S.lobj === "spur" ? "mspur" : "mpin";
+  const tagsOf = n => [n === S.mpin && "马达齿", n === S.mspur && "主齿", S.lobj !== "custom" && isReco(rk, n) && "推荐"].filter(Boolean);
   matBars($("#lewis-bars"), MATERIALS.map(([n, ys, tag]) => ({ n, sub: tag ? `${ys} MPa · ${tag}` : `${ys} MPa`, sf: ys / sig, tags: tagsOf(n) })),
     2, 1.2, key ? { k: key, sel: S[key] } : null);
 }
@@ -1323,7 +1349,7 @@ function renderShaft() {
   const host = $("#shaft-bars");
   if (bad) { host.replaceChildren(el("p", "note", "内径必须小于外径。")); return; }
   if (!(tau > 0)) { host.replaceChildren(el("p", "note", "输入大于 0 的扭矩后显示各材料安全系数。")); return; }
-  matBars(host, MATERIALS.filter(mt => !mt[2]).map(([n, ys]) => ({ n, sub: `${ys} MPa · 最小 Ø${fmt(C.dMin(S.st, ys, S.ssf), 2)}`, sf: 0.5 * ys / tau, tags: n === S.mshaft ? ["选用"] : [] })),
+  matBars(host, MATERIALS.filter(mt => !mt[2]).map(([n, ys]) => ({ n, sub: `${ys} MPa · 最小 Ø${fmt(C.dMin(S.st, ys, S.ssf), 2)}`, sf: 0.5 * ys / tau, tags: [n === S.mshaft && "选用", isReco("mshaft", n) && "推荐"].filter(Boolean) })),
     S.ssf, null, { k: "mshaft", sel: S.mshaft });
 }
 
@@ -1866,7 +1892,7 @@ function chainStages() {
   for (const k of [1, 2, 3]) {
     const z1 = S[`g${k}a`], z2 = S[`g${k}b`]; if (!(z2 > 0)) continue;
     const m = S[`g${k}m`], b = S[`g${k}w`], mat = S[`g${k}mat`], hl = S[`g${k}h`], bev = S[`g${k}t`] === "bevel", u = z2 / z1, K = S.lk;
-    const [E] = MATPHYS(mat), nu = /PA66|POM/.test(mat) ? 0.35 : 0.3, ZE = Math.sqrt(1 / (Math.PI * 2 * (1 - nu ** 2) / (E * 1000)));
+    const [E] = MATPHYS(mat), nu = /PA66|PA-CF|POM/.test(mat) ? 0.35 : 0.3, ZE = Math.sqrt(1 / (Math.PI * 2 * (1 - nu ** 2) / (E * 1000)));
     let d1, mm, zv1, zv2, uv, dv1, Re = NaN, warn = "";
     if (bev) {
       const d1r = Math.atan(z1 / z2), d2r = Math.PI / 2 - d1r; Re = m * z1 / (2 * Math.sin(d1r));
@@ -1941,7 +1967,7 @@ function renderServo() {
 
 /* ========== 横销 · 螺纹 · 轴承 ========== */
 const THREAD = { M2: [2, 2.07], "M2.5": [2.5, 3.39], M3: [3, 5.03], M4: [4, 8.78], M5: [5, 14.2], M6: [6, 20.1] };   // [公称直径, 应力截面积 mm²]
-const TGRADE = { "4.8": 340, "8.8": 640, "10.9": 940, "12.9": 1100, "A2-70": 450 };   // 屈服 / 规定塑性延伸强度最低值 MPa（ISO 898-1、ISO 3506-1）
+const TGRADE = { "4.8": 340, "8.8": 640, "10.9": 940, "12.9": 1100, "A2-70": 450, "TC4": 830 };   // TC4 为典型屈服值（手册：强度接近 10.9 级）   // 屈服 / 规定塑性延伸强度最低值 MPa（ISO 898-1、ISO 3506-1）
 const BEAR = { "608": 3.45, "6800": 1.72, "6900": 2.7, "6000": 4.75, "6001": 5.4 };    // 额定动载荷 kN，参考 SKF 样本
 function renderConn() {
   // 横销
@@ -2034,11 +2060,11 @@ function renderTorque() {
   $("#tq-table").replaceChildren(t);
   // 材料库
   const mt = el("table", "data"), mh = mt.createTHead().insertRow(), mb = mt.createTBody();
-  for (const h of ["材料", "状态", "参考强度", "数据性质", "来源 / 说明"]) mh.append(el("th", null, h));
+  for (const h of ["材料", "状态", "参考强度", "数据性质", "来源 / 说明", "典型用途（选型手册）"]) mh.append(el("th", null, h));
   for (const [n, ys, tag] of MATERIALS) {
-    const [st, kind, src] = MATINFO[n] || ["", "typ", ""], tr = mb.insertRow();
+    const [st, kind, src, use] = MATINFO[n] || ["", "typ", "", ""], tr = mb.insertRow();
     const bd = el("td", "st"); bd.append(el("span", "badge " + kind, kind === "std" ? "标准最低值" : "典型值"));
-    tr.append(el("td", "nm", n + (tag ? `（${tag}）` : "")), el("td", "st", st), el("td", null, ys + " MPa"), bd, el("td", "src", src));
+    tr.append(el("td", "nm", n + (tag ? `（${tag}）` : "")), el("td", "st", st), el("td", null, ys + " MPa"), bd, el("td", "src", src), el("td", "src", use || ""));
   }
   $("#mat-table").replaceChildren(mt);
 }
