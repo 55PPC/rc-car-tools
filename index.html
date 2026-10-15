@@ -259,6 +259,7 @@ table.data td.st{white-space:nowrap;text-align:left}
 table.data td.src{white-space:normal;text-align:left;color:var(--muted);font-size:12px;min-width:14em}
 table.data td.lim{color:var(--muted);font-size:12px}
 #ts-table td.nm{min-width:11em}
+#hl-tips b{flex:none;min-width:5.5em;white-space:nowrap}
 #tq-table td.nm{min-width:9.5em}
 #ts-table td.acts{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 #ts-table td.acts .mini + .mini{margin-left:0}
@@ -286,6 +287,7 @@ table.data tr.sub td{color:var(--muted);font-size:12px}
   <button role="tab" id="t-shaft" data-tab="shaft" aria-controls="shaft" type="button"><span class="tl">轴强度</span><small>剪应力 · 轴径 · 选材</small></button>
   <button role="tab" id="t-torque" data-tab="torque" aria-controls="torque" type="button"><span class="tl">转矩流 · 载荷</span><small>名义 / 峰值 · 逐件安全系数</small></button>
   <button role="tab" id="t-conn" data-tab="conn" aria-controls="conn" type="button"><span class="tl">轮端 · 连接</span><small>横销 · 螺纹 · 轴承寿命</small></button>
+  <button role="tab" id="t-holes" data-tab="holes" aria-controls="holes" type="button"><span class="tl">螺丝孔尺寸</span><small>通孔 · 底孔 · 沉孔 · 嵌件</small></button>
   <button role="tab" id="t-battery" data-tab="battery" aria-controls="battery" type="button"><span class="tl">电池 · 续航</span><small>电流余量 · 续航</small></button>
   <button role="tab" id="t-chassis" data-tab="chassis" aria-controls="chassis" type="button"><span class="tl">车身 · 重心</span><small>轴荷 · 侧翻</small></button>
   <button role="tab" id="t-mass" data-tab="mass" aria-controls="mass" type="button"><span class="tl">质量预算</span><small>零件质量 · 簧下 · 重心</small></button>
@@ -397,6 +399,18 @@ table.data tr.sub td{color:var(--muted);font-size:12px}
     <div class="inputs" data-block="bearing"></div>
     <div class="results"><div class="tiles" id="br-tiles"></div>
       <div class="card"><p class="note" style="margin:0">L10 = (C / P)³ × 10⁶ 转，P = 载荷系数 × max(Fr, 0.56Fr + 1.6Fa)（深沟球轴承近似）。预设额定动载荷 C 参考 SKF 样本，不同品牌和密封形式差别很大，请按实际供应商样本填写。RC 车轴承多因进沙、进水和冲击压痕提前失效，计算寿命只代表干净润滑条件。</p></div></div>
+  </div>
+</section>
+
+<section id="holes" class="tab" role="tabpanel" aria-labelledby="t-holes" hidden>
+  <div class="blk"><h2>螺丝孔预留尺寸<span>公制粗牙，画图时直接照着留孔</span></h2>
+    <div class="inputs" data-block="holes"></div>
+    <div class="results">
+      <div class="tiles" id="hl-tiles"></div>
+      <div class="card"><div class="row-flex between"><h4>全部规格对照</h4><button class="mini" id="hl-copy" type="button">复制表格</button></div><p class="sub" id="hl-sub"></p><div class="scroll" id="hl-table"></div></div>
+      <div class="card"><h4>螺丝头与螺母（画沉孔、螺母槽时对照）</h4><p class="sub">单位 mm。头部和螺母尺寸取标准规定的最大值，实际零件略小。</p><div class="scroll" id="hl-heads"></div></div>
+      <div class="card"><h4>留孔提示</h4><div id="hl-tips"></div></div>
+    </div>
   </div>
 </section>
 
@@ -682,6 +696,7 @@ const DEF = { kv: 3300, cells: 2, vmode: "n", volt: 7.4, lf: 0.85, pinion: 18, s
   cap: 5000, crate: 50, avg: 20, cf: 1, cr: 1.1, wb: 260, tw: 190, ch: 40,
   kp: 160, sdi: 25, sra: 20, sbeta: 15,
   csl: 200, ujb: 15,
+  hsz: "M3", hfit: "m", hpl: "pa", hproc: "cnc", hcomp: 0.2,
   mb: "[]", rv: "{}",
   sax: "f", sG: 79, sRm: 1600, sz: 0.4,
   ffq: 4, fmr: 0.6, fus: 0.08, fwd: 1.2, fDm: 14, fn: 8, fnt: 10, fL0: 40, fpre: 2, fst: 20,
@@ -712,6 +727,7 @@ for (const k of ["g1mat", "g2mat", "g3mat"]) if (!(S[k] in MAT)) S[k] = DEF[k];
 for (const k of ["g1t", "g2t", "g3t"]) if (!["spur", "bevel"].includes(S[k])) S[k] = DEF[k];
 if (!["spur", "diff", "custom"].includes(S.gsrc)) S.gsrc = DEF.gsrc;
 if (!["f", "r"].includes(S.sax)) S.sax = DEF.sax;
+for (const [k, ok] of [["hsz", ["M2", "M2.5", "M3", "M4", "M5", "M6"]], ["hfit", ["f", "m", "c"]], ["hpl", ["pa", "pagf", "pom", "abs"]], ["hproc", ["cnc", "fdm"]]]) if (!ok.includes(S[k])) S[k] = DEF[k];
 for (const k of ["mb", "rv"]) { try { JSON.parse(S[k]); } catch (e) { S[k] = DEF[k]; } if (S[k].length > 100000) S[k] = DEF[k]; }
 for (const [k, ok] of [["tsz", THREADS_OK], ["tgr", GRADES_OK], ["bpre", BEARS_OK]]) if (!ok.includes(S[k])) S[k] = DEF[k];
 if (!MATERIALS.some(m => m[0] === S.mshaft && !m[2])) S.mshaft = DEF.mshaft;
@@ -855,6 +871,12 @@ const BLOCKS = {
       { k: "rL0", l: "自由长度", u: "mm", step: 0.5, show: s => s.sax === "r" },
       { k: "rpre", l: "预压量", u: "mm", step: 0.5, zero: 1, show: s => s.sax === "r" },
       { k: "rst", l: "避震行程", u: "mm", step: 0.5, show: s => s.sax === "r" }] }],
+  holes: [{ t: "选择", f: [
+    { type: "seg", k: "hsz", l: "螺纹规格", opts: [["M2", "M2"], ["M2.5", "M2.5"], ["M3", "M3"], ["M4", "M4"], ["M5", "M5"], ["M6", "M6"]] },
+    { type: "seg", k: "hfit", l: "通孔配合（ISO 273）", opts: [["f", "精配"], ["m", "中等"], ["c", "粗"]], h: "精配用于需要定位的孔；中等是默认选择；粗用于装配误差大或铸件、打印件" },
+    { type: "seg", k: "hpl", l: "塑料自攻的母材", opts: [["pa", "PA / PA66"], ["pagf", "PA-GF 玻纤"], ["pom", "POM"], ["abs", "ABS / PC"]] },
+    { type: "seg", k: "hproc", l: "孔的加工方式", opts: [["cnc", "钻 / CNC"], ["fdm", "FDM 打印"]], h: "FDM 打印的孔通常偏小，选打印后会把补偿量加到通孔、塑料自攻孔和嵌件孔上" },
+    { k: "hcomp", l: "打印孔补偿", u: "mm", step: 0.05, zero: 1, show: s => s.hproc === "fdm", h: "一般 0.1–0.3 mm，先打一块测试孔板确认" }] }],
   cshaft: [{ t: "中轴", f: [
     { k: "csl", l: "支承跨距（两端支点间）", u: "mm", step: 1, h: "中轴尺寸、材料在本页上方「中轴（四驱）」；转速取极速时主齿转速" },
     { k: "ujb", l: "万向节工作角", u: "°", min: 0, max: 45, step: 0.5, sl: 1, zero: 1 }] }],
@@ -1935,6 +1957,73 @@ $("#ch-apply").addEventListener("click", () => {
   S.internal = +c.ratio.toFixed(4); update(); toast(`内部减速比已改为 ${fmtIn(S.internal)}，车速、转矩流都已按新值重算`);
 });
 
+/* ========== 螺丝孔尺寸 ========== */
+/* 每个规格：螺距 P、攻丝底孔、ISO 273 通孔 [精, 中, 粗]、ISO 4762 内六角圆柱头 [dk, k, 扳手]、沉孔 Ø（DIN 974-1 常用值）、
+   ISO 7380 半圆头 [dk, k, 扳手]、ISO 10642 内六角沉头 [dk 理论, 扳手]、ISO 7046 十字沉头 dk、ISO 4032 螺母 [对边 s, 厚 m]、
+   ISO 10511 尼龙锁紧螺母厚、ISO 7089 平垫 [外径, 厚]、钢丝螺套底孔、热熔铜螺母孔（常见短款，按厂家） */
+const HOLE = {
+  "M2":   { d: 2,   P: 0.4,  tap: 1.6,  thr: [2.2, 2.4, 2.6], shcs: [3.8, 2, 1.5],   cb: 4.4,  btn: null,              csk: null,         csk7046: 3.8, nut: [4, 1.6],   nyl: null, wsh: [5, 0.3],  heli: 2.1, ins: 3.2 },
+  "M2.5": { d: 2.5, P: 0.45, tap: 2.05, thr: [2.7, 2.9, 3.1], shcs: [4.5, 2.5, 2],   cb: 5.5,  btn: null,              csk: null,         csk7046: 4.7, nut: [5, 2],     nyl: null, wsh: [6, 0.5],  heli: 2.6, ins: 3.6 },
+  "M3":   { d: 3,   P: 0.5,  tap: 2.5,  thr: [3.2, 3.4, 3.6], shcs: [5.5, 3, 2.5],   cb: 6.5,  btn: [5.7, 1.65, 2],   csk: [6.72, 2],   csk7046: 5.5, nut: [5.5, 2.4], nyl: 4,    wsh: [7, 0.5],  heli: 3.2, ins: 4.0 },
+  "M4":   { d: 4,   P: 0.7,  tap: 3.3,  thr: [4.3, 4.5, 4.8], shcs: [7, 4, 3],       cb: 8,    btn: [7.6, 2.2, 2.5],  csk: [8.96, 2.5], csk7046: 8.4, nut: [7, 3.2],   nyl: 5,    wsh: [9, 0.8],  heli: 4.2, ins: 5.6 },
+  "M5":   { d: 5,   P: 0.8,  tap: 4.2,  thr: [5.3, 5.5, 5.8], shcs: [8.5, 5, 4],     cb: 9.5,  btn: [9.5, 2.75, 3],  csk: [11.2, 3],   csk7046: 9.3, nut: [8, 4.7],   nyl: 5,    wsh: [10, 1],   heli: 5.2, ins: 6.4 },
+  "M6":   { d: 6,   P: 1,    tap: 5,    thr: [6.4, 6.6, 7.0], shcs: [10, 6, 5],      cb: 11,   btn: [10.5, 3.3, 4],   csk: [13.44, 4],  csk7046: 11.3, nut: [10, 5.2], nyl: 6,    wsh: [12, 1.6], heli: 6.3, ins: null },
+};
+const PLASTIC_K = { pa: [0.8, "PA / PA66"], pagf: [0.85, "PA-GF 玻纤"], pom: [0.75, "POM"], abs: [0.8, "ABS / PC"] };
+const FIT_I = { f: 0, m: 1, c: 2 }, FIT_N = { f: "精配", m: "中等", c: "粗" };
+function holeSet(sz) {
+  const h = HOLE[sz], fdm = S.hproc === "fdm", c = fdm ? S.hcomp : 0, pk = PLASTIC_K[S.hpl] || PLASTIC_K.pa;
+  return { h, thr: h.thr[FIT_I[S.hfit] ?? 1] + c, self: Math.round(pk[0] * h.d * 20) / 20 + c, ins: h.ins ? h.ins + c : NaN,
+    cbD: h.cb, cbH: h.shcs[1] + 0.4, cskD: h.csk ? h.csk[0] + 0.3 : NaN, csk7046: h.csk7046 + 0.3, nutPocket: h.nut[0] + 0.2 + c, comp: c, pk };
+}
+function renderHoles() {
+  const sz = HOLE[S.hsz] ? S.hsz : "M3", x = holeSet(sz), h = x.h, cTxt = x.comp ? `（含打印补偿 +${fmtIn(x.comp)}）` : "";
+  tiles($("#hl-tiles"), [
+    { k: `${sz} 通孔 · ${FIT_N[S.hfit] || "中等"}`, v: fmt(x.thr, 2), u: "mm", key: 1, s: `ISO 273：精 ${h.thr[0]} / 中 ${h.thr[1]} / 粗 ${h.thr[2]}${cTxt}` },
+    { k: "金属攻丝底孔", v: fmt(h.tap, 2), u: "mm", s: `粗牙螺距 ${h.P}，底孔 ≈ d − P；钻头选 Ø${fmtIn(h.tap)}` },
+    { k: `塑料自攻底孔 · ${x.pk[1]}`, v: fmt(x.self, 2), u: "mm", s: `经验值 ≈ ${x.pk[0]} × d${cTxt}；先做样件试拧` },
+    { k: "内六角圆柱头沉孔", v: `Ø${fmt(x.cbD, 1)} × ${fmt(x.cbH, 1)}`, u: "mm", s: `头部 Ø${h.shcs[0]} × ${h.shcs[1]}（ISO 4762），深度 = 头高 + 0.4，扳手 ${h.shcs[2]} mm` },
+    { k: "热熔铜螺母孔", v: h.ins ? fmt(x.ins, 2) : "—", u: h.ins ? "mm" : "", s: h.ins ? `常见短款嵌件参考值${cTxt}，以所买嵌件的说明书为准` : "M6 嵌件规格差异大，按说明书" },
+    { k: "钢丝螺套（Helicoil）底孔", v: fmt(h.heli, 2), u: "mm", s: "用专用 STI 丝锥攻牙；7075 常拆螺孔推荐" },
+  ]);
+  $("#hl-sub").textContent = `单位 mm。通孔按「${FIT_N[S.hfit] || "中等"}」配合高亮；${S.hproc === "fdm" ? `FDM 打印，通孔、自攻孔、嵌件孔、螺母槽已加补偿 ${fmtIn(S.hcomp)} mm` : "钻孔 / CNC，无补偿"}。`;
+  const cols = ["规格", "螺距", "攻丝底孔", "通孔 精", "通孔 中", "通孔 粗", "塑料自攻孔", "沉孔 Ø × 深", "沉头孔 Ø（内六角）", "沉头孔 Ø（十字）", "螺母槽 对边", "热熔螺母孔", "钢丝螺套孔"];
+  const t = el("table", "data"), hr = t.createTHead().insertRow(), tb = t.createTBody(), tsv = [cols.join("\t")];
+  for (const c of cols) hr.append(el("th", null, c));
+  for (const k of Object.keys(HOLE)) {
+    const y = holeSet(k), hh = y.h, c = y.comp, tr = tb.insertRow(); if (k === sz) tr.className = "on";
+    const row = [k, String(hh.P), fmt(hh.tap, 2), fmt(hh.thr[0] + c, 2), fmt(hh.thr[1] + c, 2), fmt(hh.thr[2] + c, 2), fmt(y.self, 2), `${fmt(y.cbD, 1)} × ${fmt(y.cbH, 1)}`,
+      Number.isFinite(y.cskD) ? fmt(y.cskD, 2) : "—", fmt(y.csk7046, 1), fmt(y.nutPocket, 2), Number.isFinite(y.ins) ? fmt(y.ins, 2) : "—", fmt(hh.heli, 2)];
+    row.forEach((v, i) => { const td = el("td", null, v); if (i === 3 + (FIT_I[S.hfit] ?? 1)) td.style.fontWeight = "600"; tr.append(td); });
+    tsv.push(row.join("\t"));
+  }
+  $("#hl-table").replaceChildren(t); HOLE_TSV = tsv.join("\n");
+  const t2 = el("table", "data"), h2 = t2.createTHead().insertRow(), b2 = t2.createTBody();
+  for (const c of ["规格", "内六角圆柱头 Ø×高 / 扳手", "半圆头 Ø×高 / 扳手", "内六角沉头 Ø / 扳手", "十字沉头 Ø", "螺母 对边×厚", "尼龙锁紧螺母厚", "平垫 外径×厚"]) h2.append(el("th", null, c));
+  for (const k of Object.keys(HOLE)) {
+    const hh = HOLE[k], tr = b2.insertRow(); if (k === sz) tr.className = "on";
+    for (const v of [k, `${hh.shcs[0]}×${hh.shcs[1]} / ${hh.shcs[2]}`, hh.btn ? `${hh.btn[0]}×${hh.btn[1]} / ${hh.btn[2]}` : "—", hh.csk ? `${hh.csk[0]} / ${hh.csk[1]}` : "—", String(hh.csk7046),
+      `${hh.nut[0]}×${hh.nut[1]}`, hh.nyl ? String(hh.nyl) : "—", `${hh.wsh[0]}×${hh.wsh[1]}`]) tr.append(el("td", null, v));
+  }
+  $("#hl-heads").replaceChildren(t2);
+  const tips = [
+    ["旋合长度", `钢母件 ≥ 1d（${sz} 约 ${fmtIn(h.d)} mm）；铝件攻丝 ≥ 1.5–2d（${fmtIn(h.d * 1.5)}–${fmtIn(h.d * 2)} mm），7075 上用钢螺丝；塑料直接自攻 ≥ 2–2.5d（${fmtIn(h.d * 2)}–${fmtIn(h.d * 2.5)} mm）。`],
+    ["孔边距", `碳纤维板孔中心到边 ≥ 2 倍孔径（${sz} 通孔约 ${fmt(2 * h.thr[1], 1)} mm），切边用 CA 胶或环氧封边；塑料件孔边至少留 1.5d 壁厚。`],
+    ["常拆位置", "7075 螺孔反复拆装会滑牙：用钢丝螺套，或改成贯穿螺栓 + 尼龙锁紧螺母。塑料件常拆处用热熔铜螺母，别反复自攻。"],
+    ["沉孔与沉头", "沉孔深度按头高 + 0.3–0.5 mm 留，头部不凸出；沉头孔按 90° 锥角，直径比头部大 0.2–0.4 mm，碳纤维板太薄时不要做沉头（锥面会切穿铺层）。"],
+    ["螺母槽", "六角螺母槽按对边 + 0.2 mm（打印件再加补偿），槽深 = 螺母厚 + 0.2 mm；尼龙锁紧螺母不要压进槽里，尼龙圈会变形。"],
+    ["数据来源", "通孔 ISO 273；螺丝头 ISO 4762 / 7380 / 10642 / 7046；螺母 ISO 4032 / 10511；平垫 ISO 7089；沉孔直径按 DIN 974-1 常用加工值。塑料自攻孔、热熔螺母孔、打印补偿是经验值，正式定版前先做样件。"],
+  ];
+  const box = el("div");
+  for (const [k, v] of tips) { const d = el("div", "warnline"); d.append(el("b", null, k), el("span", null, v)); box.append(d); }
+  $("#hl-tips").replaceChildren(box);
+}
+let HOLE_TSV = "";
+$("#hl-copy").addEventListener("click", () => {
+  const fallback = () => { try { const r = document.createRange(), sel = getSelection(); r.selectNodeContents($("#hl-table")); sel.removeAllRanges(); sel.addRange(r); } catch (e) {} toast("已选中表格，按 ⌘C / Ctrl+C 复制"); };
+  try { navigator.clipboard.writeText(HOLE_TSV).then(() => toast("已复制，可直接粘贴到 Excel / WPS"), fallback); } catch (e) { fallback(); }
+});
+
 /* ========== 中轴临界转速 · 万向节 ========== */
 function renderCShaft() {
   const [E, rho] = MATPHYS(S.mcs), D_ = S.csd, d_ = S.csi, L = S.csl;
@@ -2217,6 +2306,7 @@ function clean(p) {   // 只保留已知参数，类型不对的用默认值
   for (const k of ["g1t", "g2t", "g3t"]) if (!["spur", "bevel"].includes(o[k])) o[k] = DEF[k];
   if (!["spur", "diff", "custom"].includes(o.gsrc)) o.gsrc = DEF.gsrc;
   if (!["f", "r"].includes(o.sax)) o.sax = DEF.sax;
+  for (const [k, ok] of [["hsz", ["M2", "M2.5", "M3", "M4", "M5", "M6"]], ["hfit", ["f", "m", "c"]], ["hpl", ["pa", "pagf", "pom", "abs"]], ["hproc", ["cnc", "fdm"]]]) if (!ok.includes(o[k])) o[k] = DEF[k];
   for (const k of ["mb", "rv"]) { try { JSON.parse(o[k]); } catch (e) { o[k] = DEF[k]; } if (o[k].length > 100000) o[k] = DEF[k]; }
   for (const [k, ok] of [["tsz", THREADS_OK], ["tgr", GRADES_OK], ["bpre", BEARS_OK]]) if (!ok.includes(o[k])) o[k] = DEF[k];
   if (!["pin", "spur", "custom"].includes(o.lobj)) o.lobj = DEF.lobj;
@@ -2409,7 +2499,7 @@ for (const id of ["#g-a", "#g-b", "#g-only"]) $(id).addEventListener("change", r
 $("#g-name").addEventListener("keydown", e => { if (e.key === "Enter") $("#g-save").click(); });
 
 /* ========== 总结 · BOM ========== */
-const TABNAME = { drive: "动力 · 齿比", gear: "齿轮设计", shaft: "轴强度", battery: "电池 · 续航", chassis: "车身 · 重心", steer: "转向 · 阿克曼", torque: "转矩流 · 载荷", goals: "目标 · 验证", conn: "轮端 · 连接", susp: "悬架 · 弹簧", mass: "质量预算", review: "评审 · 节点", parts: "零件库 · BOM 核查", summary: "总结 · BOM" };
+const TABNAME = { drive: "动力 · 齿比", gear: "齿轮设计", shaft: "轴强度", battery: "电池 · 续航", chassis: "车身 · 重心", steer: "转向 · 阿克曼", torque: "转矩流 · 载荷", goals: "目标 · 验证", conn: "轮端 · 连接", susp: "悬架 · 弹簧", mass: "质量预算", review: "评审 · 节点", parts: "零件库 · BOM 核查", holes: "螺丝孔尺寸", summary: "总结 · BOM" };
 const PICKNAME = { mpin: "马达齿材料", mspur: "主齿材料", mshaft: "轴材料" };
 let BOM_TSV = "";
 function gearCheck(obj, mat) {
@@ -2464,11 +2554,11 @@ function renderSummary() {
 }
 
 /* ========== 刷新 ========== */
-const TABS = ["drive", "gear", "shaft", "torque", "conn", "battery", "chassis", "mass", "susp", "steer", "goals", "review", "parts", "garage", "summary"];
+const TABS = ["drive", "gear", "shaft", "torque", "conn", "holes", "battery", "chassis", "mass", "susp", "steer", "goals", "review", "parts", "garage", "summary"];
 let TAB = "drive";
 function renderCharts() { if (TAB === "drive") renderDriveCharts(); }
 function render() {
-  renderDrive(); renderGeom(); renderCombo(); renderLewis(); renderShaft(); renderBatt(); renderChassis(); renderSteer(); renderTorque(); renderCShaft(); renderServo(); renderConn(); renderChain(); renderSusp(); renderMass(); renderReview(); renderSummary(); renderGarage();
+  renderDrive(); renderGeom(); renderCombo(); renderLewis(); renderShaft(); renderBatt(); renderChassis(); renderSteer(); renderTorque(); renderCShaft(); renderServo(); renderConn(); renderChain(); renderSusp(); renderMass(); renderReview(); renderHoles(); renderSummary(); renderGarage();
   renderCharts();
 }
 function update() { D = derive(); render(); sync(); save(); }
